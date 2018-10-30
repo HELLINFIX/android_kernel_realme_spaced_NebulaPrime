@@ -127,7 +127,6 @@ static FORCE_INLINE int __LZ4_decompress_generic(
 
 		/* get literal length */
 		unsigned int const token = *ip++;
-
 		length = token>>ML_BITS;
 
 		/* ip < iend before the increment */
@@ -266,6 +265,7 @@ static FORCE_INLINE int __LZ4_decompress_generic(
 			memcpy(op, ip, length);
 			ip += length;
 			op += length;
+
 			/* Necessarily EOF, due to parsing restrictions */
 			if (!partialDecoding || (cpy == oend))
 				break;
@@ -351,7 +351,6 @@ _copy_match:
 
 				memcpy(op, dictEnd - copySize, copySize);
 				op += copySize;
-
 				if (restSize > (size_t)(op - lowPrefix)) {
 					/* overlap copy */
 					BYTE * const endOfMatch = op + restSize;
@@ -364,7 +363,6 @@ _copy_match:
 					op += restSize;
 				}
 			}
-
 			continue;
 		}
 
@@ -426,12 +424,10 @@ _copy_match:
 				match += oCopyLimit - op;
 				op = oCopyLimit;
 			}
-
 			while (op < cpy)
 				*op++ = *match++;
 		} else {
 			LZ4_copy8(op, match);
-
 			if (length > 16)
 				LZ4_wildCopy(op + 8, match + 8, cpy);
 		}

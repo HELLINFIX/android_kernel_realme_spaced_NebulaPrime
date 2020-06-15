@@ -15,7 +15,7 @@ struct target_nrg {
 	struct reciprocal_value rdiv;
 };
 
-int schedtune_cpu_boost(int cpu);
+int schedtune_cpu_boost_with(int cpu, struct task_struct *p);
 int schedtune_task_boost(struct task_struct *tsk);
 
 int schedtune_prefer_idle(struct task_struct *tsk);
@@ -28,8 +28,6 @@ unsigned int schedtune_window_policy(struct task_struct *p);
 unsigned int uclamp_discount_wait_time(struct task_struct *p);
 #endif
 
-unsigned long stune_util(int cpu, unsigned long other_util);
-
 #ifdef CONFIG_UCLAMP_TASK_GROUP
 extern struct schedtune root_schedtune;
 struct uclamp_se
@@ -41,7 +39,7 @@ void uclamp_update_root_st(void);
 #endif
 #else /* CONFIG_SCHED_TUNE */
 
-#define schedtune_cpu_boost(cpu)  0
+#define schedtune_cpu_boost_with(cpu, p)  0
 #define schedtune_task_boost(tsk) 0
 
 #define schedtune_prefer_idle(tsk) 0

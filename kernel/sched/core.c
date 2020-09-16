@@ -73,7 +73,7 @@ const_debug unsigned int sysctl_sched_features =
 #if !defined(CONFIG_ANDROID)
 const_debug unsigned int sysctl_sched_nr_migrate = 8;
 #else
-const_debug unsigned int sysctl_sched_nr_migrate = 32;
+const_debug unsigned int sysctl_sched_nr_migrate = 16;
 #endif
 
 /*

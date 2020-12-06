@@ -130,3 +130,4 @@ obj-$(CONFIG_DUMP_TASKS_MEM) += task_mem/
 #endif /*defined(OPLUS_FEATURE_MEMLEAK_DETECT)
 
 obj-y += async_shrink_slabd.o
+CFLAGS_kmemleak.o += -DCONFIG_DEBUG_FS

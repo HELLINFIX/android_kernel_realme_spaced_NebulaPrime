@@ -152,6 +152,7 @@ static unsigned long long_max = LONG_MAX;
 static int one_hundred = 100;
 
 static int one_thousand = 1000;
+static int max_swappiness = 200;
 #if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_UXIO_FIRST)
 unsigned int sysctl_uxio_io_opt = true;
 bool sysctl_wbt_enable = true;
@@ -1644,7 +1645,7 @@ static struct ctl_table vm_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1		= &zero,
-		.extra2		= &one_hundred,
+		.extra2		= &max_swappiness,
 	},
 #ifdef CONFIG_DYNAMIC_TUNNING_SWAPPINESS
 	{

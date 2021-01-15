@@ -762,6 +762,12 @@ KBUILD_CFLAGS	+= -mcpu=cortex-a55+crypto+crc -mtune=cortex-a55
 endif
 endif
 
+ifdef CONFIG_INLINE_OPTIMIZATION
+KBUILD_CFLAGS += -mllvm -inline-threshold=650
+KBUILD_CFLAGS += -mllvm -inlinehint-threshold=800
+KBUILD_CFLAGS += -mllvm -unroll-threshold=300
+endif
+
 KBUILD_CFLAGS += $(call cc-ifversion, -gt, 0900, \
 			$(call cc-option, -Wno-psabi) \
 			$(call cc-disable-warning,maybe-uninitialized,) \

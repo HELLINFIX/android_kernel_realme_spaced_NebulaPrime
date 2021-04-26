@@ -232,6 +232,12 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 
 	freq_hz = freq_table[index].frequency * 1000;
 
+    /* Clamp against policy limits */
+    if (freq_hz > policy->max * 1000)
+        freq_hz = policy->max * 1000;
+    if (freq_hz < policy->min * 1000)
+        freq_hz = policy->min * 1000;
+
 	opp = dev_pm_opp_find_freq_ceil(cpu_dev, &freq_hz);
 	if (IS_ERR(opp)) {
 		pr_err("cpu%d: failed to find OPP for %ld\n",

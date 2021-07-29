@@ -2732,7 +2732,7 @@ static void program_suspending_csg_slots(struct kbase_device *kbdev)
 
 				kbase_csf_add_group_fatal_error(group,
 								&err_payload);
-				kbase_event_wakeup(group->kctx);
+				kbase_event_wakeup_nosync(group->kctx);
 
 				/* TODO GPUCORE-25328: The CSG can't be
 				 * terminated, the GPU will be reset as a
@@ -3031,6 +3031,16 @@ void kbase_csf_scheduler_evict_ctx_slots(struct kbase_device *kbdev,
 
 	dev_info(kbdev->dev, "Evicting context %d_%d slots: 0x%*pb\n",
 			kctx->tgid, kctx->id, num_groups, slot_mask);
+
+	/* Fatal errors may have been the cause of the GPU reset
+	 * taking place, in which case we want to make sure that
+	 * we wake up the fatal event queue to notify userspace
+	 * only once. Otherwise, we may have duplicate event
+	 * notifications between the time the first notification
+	 * occurs and the time the GPU is reset.
+	 */
+
+	kbase_event_wakeup_sync(kctx);
 
 	mutex_unlock(&scheduler->lock);
 }

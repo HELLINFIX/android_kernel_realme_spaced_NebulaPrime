@@ -654,8 +654,6 @@ rename:
 
 	trace_add_device_to_group(group->id, dev);
 
-	pr_debug("Adding device %s to group %d\n", dev_name(dev), group->id);
-
 	return 0;
 
 err_put_group:

@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0
-subdir-ccflags-$(CONFIG_POWER_SUPPLY_DEBUG) := -DDEBUG
 ifeq ($(CONFIG_MACH_MT6768),y)
 obj-y += mediatek/
 else ifeq ($(CONFIG_MACH_MT6739),y)

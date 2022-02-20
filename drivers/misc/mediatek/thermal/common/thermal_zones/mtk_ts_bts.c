@@ -40,13 +40,13 @@
 int __attribute__ ((weak))
 IMM_IsAdcInitReady(void)
 {
-	pr_notice("E_WF: %s doesn't exist\n", __func__);
+	pr_debug("E_WF: %s doesn't exist\n", __func__);
 	return 0;
 }
 int __attribute__ ((weak))
 IMM_GetOneChannelValue(int dwChannel, int data[4], int *rawdata)
 {
-	pr_notice("E_WF: %s doesn't exist\n", __func__);
+	pr_debug("E_WF: %s doesn't exist\n", __func__);
 	return -1;
 }
 
@@ -102,7 +102,7 @@ int bts_cur_temp = 1;
 #define mtkts_bts_dprintk(fmt, args...)   \
 do {                                    \
 	if (mtkts_bts_debug_log) {                \
-		pr_notice("[Thermal/TZ/BTS]" fmt, ##args); \
+		pr_debug("[Thermal/TZ/BTS]" fmt, ##args); \
 	}                                   \
 } while (0)
 

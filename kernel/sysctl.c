@@ -108,13 +108,6 @@ extern unsigned int sysctl_sched_walt_init_task_load_pct;
 
 #if defined(CONFIG_SYSCTL)
 
-#ifdef CONFIG_OPLUS_BINDER_STRATEGY
-#include <soc/oplus/healthinfo.h>
-extern int sysctl_ob_control_enable;
-extern int ob_pid;
-extern int sysctl_ob_control_handler(struct ctl_table *table, int write, void __user *buffer, size_t *lenp, loff_t *ppos);
-#endif
-
 /* External variables not in a header file. */
 extern int suid_dumpable;
 #ifdef CONFIG_COREDUMP
@@ -145,7 +138,6 @@ u64 sysctl_mmapsem_uninterruptable_time;
 #ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
 extern sysctl_sched_impt_tgid;
 #endif
-
 static int __maybe_unused neg_one = -1;
 
 static int zero;
@@ -1336,22 +1328,6 @@ static struct ctl_table kern_table[] = {
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1		= &zero,
 		.extra2		= &one,
-	},
-#endif
-#ifdef CONFIG_OPLUS_BINDER_STRATEGY
-	{
-		.procname	= "oplus_binder_control_enabled",
-		.data		= &sysctl_ob_control_enable,
-		.maxlen 	= sizeof(int),
-		.mode		= 0660,
-		.proc_handler = sysctl_ob_control_handler,
-	},
-	{
-		.procname	= "oplus_bg_thread_pid",
-		.data		= &ob_pid,
-		.maxlen 	= sizeof(int),
-		.mode		= 0660,
-		.proc_handler = proc_dointvec,
 	},
 #endif
 #if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_CTP)

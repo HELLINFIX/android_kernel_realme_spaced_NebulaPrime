@@ -29,9 +29,6 @@
 #endif
 #define MAX_ORDER_NR_PAGES (1 << (MAX_ORDER - 1))
 
-#if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
-#define FREE_AREA_COUNTS 4
-#endif
 /*
  * PAGE_ALLOC_COSTLY_ORDER is the order at which allocations are deemed
  * costly to service.  That is between allocation orders which should
@@ -591,14 +588,6 @@ enum zone_type {
 
 #ifndef __GENERATING_BOUNDS_H
 
-#if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
-struct page_label {
-    unsigned long label;
-    unsigned long segment;
-};
-#endif
-
-
 #define ASYNC_AND_SYNC 2
 
 struct zone {
@@ -685,9 +674,6 @@ struct zone {
 	unsigned long		managed_pages;
 	unsigned long		spanned_pages;
 	unsigned long		present_pages;
-#if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
-    struct page_label zone_label[FREE_AREA_COUNTS];
-#endif
 	const char		*name;
 
 #ifdef CONFIG_MEMORY_ISOLATION
@@ -710,11 +696,7 @@ struct zone {
 	ZONE_PADDING(_pad1_)
 
 	/* free areas of different sizes */
-#if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
-	struct free_area	free_area[FREE_AREA_COUNTS][MAX_ORDER];
-#else
 	struct free_area	free_area[MAX_ORDER];
-#endif
 
 	/* zone flags, see below */
 	unsigned long		flags;

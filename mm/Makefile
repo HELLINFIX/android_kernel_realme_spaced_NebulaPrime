@@ -119,9 +119,6 @@ obj-$(CONFIG_HMM) += hmm.o
 obj-$(CONFIG_MEMFD_CREATE) += memfd.o
 obj-$(CONFIG_DAMON) += damon/
 
-#if defined(OPLUS_FEATURE_MULTI_FREEAREA)
-obj-$(CONFIG_PHYSICAL_ANTI_FRAGMENTATION) += multi_freearea.o
-#endif
 #ifdef OPLUS_FEATURE_HEALTHINFO
 obj-y += healthinfo/
 #endif /*OPLUS_FEATURE_HEALTHINFO*/

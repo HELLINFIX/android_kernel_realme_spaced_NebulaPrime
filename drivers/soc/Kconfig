@@ -19,10 +19,6 @@ source "drivers/soc/versatile/Kconfig"
 source "drivers/soc/xilinx/Kconfig"
 source "drivers/soc/zte/Kconfig"
 
-#ifdef OPLUS_FEATURE_LOWMEM_DBG
-source "drivers/soc/oplus/lowmem_dbg/Kconfig"
-##endif /* OPLUS_FEATURE_LOWMEM_DBG */
-
 #ifdef OPLUS_FEATURE_IOMONITOR
 source "drivers/soc/oplus/iomonitor/Kconfig"
 #endif /*OPLUS_FEATURE_IOMONITOR*/

@@ -26,10 +26,6 @@ obj-$(CONFIG_PLAT_VERSATILE)	+= versatile/
 obj-y				+= xilinx/
 obj-$(CONFIG_ARCH_ZX)		+= zte/
 
-#ifdef OPLUS_FEATURE_LOWMEM_DBG
-obj-$(CONFIG_OPLUS_FEATURE_LOWMEM_DBG)	+=  oplus/lowmem_dbg/
-#endif /* OPLUS_FEATURE_LOWMEM_DBG */
-
 #ifdef OPLUS_FEATURE_IOMONITOR
 obj-$(CONFIG_IOMONITOR)    +=  oplus/iomonitor/
 #endif /*OPLUS_FEATURE_IOMONITOR*/

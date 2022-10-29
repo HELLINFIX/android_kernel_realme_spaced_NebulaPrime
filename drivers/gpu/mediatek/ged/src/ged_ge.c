@@ -156,7 +156,7 @@ int ged_ge_alloc(int region_num, uint32_t *region_sizes)
 			region_sizes[i] > GE_MAX_REGION_SIZE) {
 			GED_PDEBUG("check size fail rgion_sizes[%d]:%u\n",
 				i, region_sizes[i]);
-				goto err_kmalloc;
+			goto err_parameter;
 		}
 		entry->region_sizes[i] = region_sizes[i];
 	}

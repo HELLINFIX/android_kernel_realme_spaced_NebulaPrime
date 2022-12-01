@@ -2689,9 +2689,9 @@ static long FDVT_ioctl(struct file *pFile,
 			if (FDVT_REQUEST_STATE_EMPTY ==
 				request->state) {
 				if (enqueNum >
-					MAX_FDVT_FRAME_REQUEST || enqueNum < 0) {
+					MAX_FDVT_FRAME_REQUEST) {
 					log_err(
-					"FDVT Enque Num is bigger than enqueNum or negtive:%d\n",
+					"FDVT Enque Num is bigger than enqueNum:%d\n",
 					enqueNum);
 					break;
 				}

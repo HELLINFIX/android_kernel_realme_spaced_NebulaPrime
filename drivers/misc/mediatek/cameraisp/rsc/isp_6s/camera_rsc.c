@@ -1894,9 +1894,9 @@ static long RSC_ioctl(struct file *pFile, unsigned int Cmd, unsigned long Param)
 							g_RSC_ReqRing.WriteIdx].
 				    State) {
 					if (enqueNum >
-					_SUPPORT_MAX_RSC_FRAME_REQUEST_ || enqueNum < 0) {
+					_SUPPORT_MAX_RSC_FRAME_REQUEST_) {
 						LOG_ERR(
-						"RSC Enque Num is bigger than enqueNum or NEG:%d\n",
+						"RSC Enque Num is bigger than enqueNum:%d\n",
 						     enqueNum);
 						break;
 					}

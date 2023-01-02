@@ -247,8 +247,6 @@ EXPORT_SYMBOL(mt_leds_brightness_set);
 static int led_level_set(struct led_classdev *led_cdev,
 					  enum led_brightness brightness)
 {
-	int trans_level = 0;
-
 	struct led_conf_info *led_conf =
 		container_of(led_cdev, struct led_conf_info, cdev);
 	struct mtk_led_data *led_dat =

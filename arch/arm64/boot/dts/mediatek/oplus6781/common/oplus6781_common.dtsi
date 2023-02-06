@@ -636,6 +636,7 @@
 		irq_need_dev_resume_ok;
 		fw_edge_limit_support;
 		black_gesture_support;
+		black_gesture_indep_support;
 		charger_pump_support;
 		headset_pump_support;
 		esd_handle_support;

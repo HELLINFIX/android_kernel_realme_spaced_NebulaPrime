@@ -35,8 +35,6 @@ endif
 
 
 ccflags-y += -D CONNAC20_CHIPID=$(BT_PLATFORM)
-$(info $(LOG_TAG) BT_PLATFORM = $(BT_PLATFORM))
-$(info $(LOG_TAG) srctree = $(srctree))
 
 # ---------------------------------------------------
 # Compile Options: set feature flag (1: enable, 0: disable)

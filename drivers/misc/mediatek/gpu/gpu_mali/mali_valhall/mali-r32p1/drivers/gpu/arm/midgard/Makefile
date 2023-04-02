@@ -184,8 +184,6 @@ endif
 #
 
 # *** MTK ***
-$(info *GPU [mtk-Kbuild] src = $(src))
-$(info *GPU [mtk-Kbuild] srctree = $(srctree))
 include $(KO_CODE_PATH)/Kbuild-mtk-custom-env
 include $(KO_CODE_PATH)/platform/mtk_platform_common/Kbuild
 ccflags-y += -I$(KO_CODE_PATH)/include

@@ -29,6 +29,8 @@
 #include <linux/io.h>
 #include <linux/protected_memory_allocator.h>
 
+#define MTK_PMA_DEBUG (0)
+
 /* Size of a bitfield element in bytes */
 #define BITFIELD_ELEM_SIZE sizeof(u64)
 

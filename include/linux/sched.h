@@ -1298,20 +1298,6 @@ struct task_struct {
 	struct latency_record		latency_record[LT_SAVECOUNT];
 #endif
 
-#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
-#define UID_PERF_EVENTS 3
-	struct perf_event* uid_pevents[UID_PERF_EVENTS];
-	long long uid_counts[UID_PERF_EVENTS];
-	long long uid_prev_counts[UID_PERF_EVENTS];
-	long long uid_leaving_counts[UID_PERF_EVENTS];
-
-	/* define for grouping info */
-#define UID_GROUP_SIZE 8
-	long long uid_group[UID_GROUP_SIZE];
-	long long uid_group_prev_counts[UID_GROUP_SIZE];
-	long long uid_group_snapshot_prev_counts[UID_GROUP_SIZE];
-#endif
-
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
 	struct list_head user_tasks;
 	atomic64_t ions;

@@ -6789,6 +6789,7 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 	return target;
 }
 
+#ifdef CONFIG_MTK_SCHED_EXTENSION
 /*
  * @p: the task want to be located at.
  *
@@ -6842,6 +6843,7 @@ find_idle_cpu:
 
 	return best_idle_cpu;
 }
+#endif /* CONFIG_MTK_SCHED_EXTENSION */
 
 #ifdef CONFIG_ARM64
 static void arch_get_cluster_cpus(struct cpumask *cpus, int cluster_id)
@@ -6871,7 +6873,7 @@ static void arch_get_cluster_cpus(struct cpumask *cpus, int socket_id)
 }
 #endif
 
-
+#ifdef CONFIG_MTK_SCHED_EXTENSION
 /* To find a CPU with max spare capacity in the same cluster with target */
 static
 int select_max_spare_capacity(struct task_struct *p, int target)
@@ -6933,10 +6935,12 @@ int select_max_spare_capacity(struct task_struct *p, int target)
 	else
 		return task_cpu(p);
 }
+#endif /* CONFIG_MTK_SCHED_EXTENSION */
 
 static int
 ___select_idle_sibling(struct task_struct *p, int prev_cpu, int new_cpu)
 {
+#ifdef CONFIG_MTK_SCHED_EXTENSION
 	if (sched_feat(SCHED_MTK_EAS)) {
 		bool prefer_idle = uclamp_latency_sensitive(p);
 		int idle_cpu;
@@ -6948,7 +6952,9 @@ ___select_idle_sibling(struct task_struct *p, int prev_cpu, int new_cpu)
 			new_cpu = select_max_spare_capacity(p, new_cpu);
 	} else
 		new_cpu = select_idle_sibling(p, prev_cpu, new_cpu);
-
+#else /* CONFIG_MTK_SCHED_EXTENSION */
+	new_cpu = select_idle_sibling(p, prev_cpu, new_cpu);
+#endif /* CONFIG_MTK_SCHED_EXTENSION */
 	return new_cpu;
 }
 

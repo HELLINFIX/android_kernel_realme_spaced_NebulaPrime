@@ -194,7 +194,6 @@ subdir-ccflags-y += -I$(KO_CODE_PATH)/include
 # Driver version string which is returned to userspace via an ioctl
 MALI_RELEASE_NAME ?= '"r32p1-01eac0"'
 # Set up defaults if not defined by build system
-ifeq ($(CONFIG_MALI_DEBUG), y)
     MALI_UNIT_TEST = 1
     MALI_CUSTOMER_RELEASE ?= 0
 else
@@ -308,21 +307,14 @@ mali_kbase-y += \
     mali_kbase_softjobs.o \
     mali_kbase_hw.o \
     mali_kbase_debug.o \
-    mali_kbase_gpu_memory_debugfs.o \
     mali_kbase_mem_linux.o \
     mali_kbase_core_linux.o \
-    mali_kbase_mem_profile_debugfs.o \
     mali_kbase_disjoint_events.o \
     mali_kbase_debug_mem_view.o \
     mali_kbase_gator_api.o \
     mali_kbase_smc.o \
     mali_kbase_mem_pool.o \
-    mali_kbase_mem_pool_debugfs.o \
-    mali_kbase_debugfs_helper.o \
     mali_kbase_strings.o \
-    mali_kbase_as_fault_debugfs.o \
-    mali_kbase_regs_history_debugfs.o \
-    mali_kbase_dvfs_debugfs.o \
     mali_power_gpu_frequency_trace.o \
     mali_kbase_trace_gpu_mem.o
 
@@ -349,7 +341,6 @@ else
         mali_kbase_debug_job_fault.o \
         mali_kbase_event.o \
         mali_kbase_jd.o \
-        mali_kbase_jd_debugfs.o \
         mali_kbase_js.o \
         mali_kbase_js_ctx_attr.o \
         mali_kbase_kinstr_jm.o

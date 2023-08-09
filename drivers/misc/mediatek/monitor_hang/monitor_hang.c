@@ -2072,7 +2072,6 @@ static int __init monitor_hang_init(void)
 {
 	int err = 0;
 
-	if (!aee_is_enable())
 		return err;
 
 #ifdef MODULE
@@ -2103,7 +2102,6 @@ static int __init monitor_hang_init(void)
 
 static void __exit monitor_hang_exit(void)
 {
-	if (!aee_is_enable())
 		return;
 
 	misc_deregister(&Hang_Monitor_dev);

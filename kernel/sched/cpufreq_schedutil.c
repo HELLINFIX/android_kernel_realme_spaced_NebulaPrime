@@ -139,6 +139,11 @@ static bool sugov_should_update_freq(struct sugov_policy *sg_policy, u64 time)
 	if (sg_policy->flags & SCHED_CPUFREQ_BOOST)
 		return true;
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
+	/* If the last frequency wasn't set yet then we can still amend it */
+	if (sg_policy->work_in_progress)
+		return true;
+
 	delta_ns = time - sg_policy->last_freq_update_time;
 	return delta_ns >= sg_policy->min_rate_limit_ns;
 }

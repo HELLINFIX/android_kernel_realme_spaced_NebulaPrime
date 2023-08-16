@@ -3,7 +3,7 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#define DEBUG 1
+#define DEBUG 0
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -1674,7 +1674,7 @@ static int tscpu_thermal_suspend
 		do {
 			temp = (readl(THAHBST0) >> 16);
 			if ((cnt + 1) % 10 == 0)
-				pr_notice("THAHBST0 = 0x%x, cnt = %d, %d\n",
+				pr_debug("THAHBST0 = 0x%x, cnt = %d, %d\n",
 							temp, cnt, __LINE__);
 
 			udelay(50);
@@ -1688,7 +1688,7 @@ static int tscpu_thermal_suspend
 		do {
 			temp = (readl(THAHBST0) >> 16);
 			if ((cnt + 1) % 10 == 0)
-				pr_notice("THAHBST0 = 0x%x, cnt = %d, %d\n",
+				pr_debug("THAHBST0 = 0x%x, cnt = %d, %d\n",
 							temp, cnt, __LINE__);
 
 			udelay(2);
@@ -1729,7 +1729,7 @@ static int tscpu_thermal_suspend
 	do_gettimeofday(&end);
 
 	/* Get milliseconds */
-	pr_notice("suspend time spent, sec : %lu , usec : %lu\n",
+	pr_debug("suspend time spent, sec : %lu , usec : %lu\n",
 						(end.tv_sec - begin.tv_sec),
 						(end.tv_usec - begin.tv_usec));
 #endif
@@ -1824,7 +1824,7 @@ static int tscpu_thermal_resume(struct platform_device *dev)
 		do {
 			temp = (readl(THAHBST0) >> 16);
 			if ((cnt + 1) % 10 == 0)
-				pr_notice("THAHBST0 = 0x%x, cnt = %d, %d\n",
+				pr_debug("THAHBST0 = 0x%x, cnt = %d, %d\n",
 							temp, cnt, __LINE__);
 
 			udelay(50);
@@ -1838,7 +1838,7 @@ static int tscpu_thermal_resume(struct platform_device *dev)
 		do {
 			temp = (readl(THAHBST0) >> 16);
 			if ((cnt + 1) % 10 == 0)
-				pr_notice("THAHBST0 = 0x%x, cnt = %d, %d\n",
+				pr_debug("THAHBST0 = 0x%x, cnt = %d, %d\n",
 							temp, cnt, __LINE__);
 
 			udelay(2);
@@ -2559,7 +2559,7 @@ static void init_thermal(void)
 	while (cnt < 50) {
 		temp = (readl(THAHBST0) >> 16);
 		if ((cnt + 1) % 10 == 0)
-			pr_notice("THAHBST0 = 0x%x,cnt=%d, %d\n", temp, cnt,
+			pr_debug("THAHBST0 = 0x%x,cnt=%d, %d\n", temp, cnt,
 								__LINE__);
 
 		if (temp == 0x0) {

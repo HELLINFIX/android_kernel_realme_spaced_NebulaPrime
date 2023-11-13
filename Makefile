@@ -761,9 +761,6 @@ ifeq ($(cc-name),clang)
 KBUILD_CFLAGS	+= -march=armv8.2-a+dotprod -mcpu=cortex-a55+crypto+crc -mtune=cortex-a55
 endif
 endif
-ifdef CONFIG_LTO_CLANG
-KBUILD_CFLAG	+= -fwhole-program-vtables
-endif
 ifdef CONFIG_INLINE_OPTIMIZATION
 KBUILD_CFLAGS += -mllvm -inline-threshold=650
 KBUILD_CFLAGS += -mllvm -inlinehint-threshold=800

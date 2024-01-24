@@ -34,6 +34,9 @@ endif
     subdir-ccflags-y += -I$(srctree)/drivers/pinctrl/mediatek/
     subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/power_throttling/
 
+    # Remove debugging
+    export TARGET_BUILD_VARIANT=user
+
     # Do Nothing, move to standalone repo
     MODULE_NAME := connadp
     obj-$(CONFIG_MTK_COMBO) += $(MODULE_NAME).o

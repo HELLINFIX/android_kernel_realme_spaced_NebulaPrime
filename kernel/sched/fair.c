@@ -12026,9 +12026,15 @@ void task_check_for_rotation(struct rq *src_rq)
 
 	if (force) {
 		queue_work_on(src_cpu, system_highpri_wq, &wr->w);
+#ifdef CONFIG_MTK_EAS_CTRL
 		trace_sched_big_task_rotation(wr->src_cpu, wr->dst_cpu,
 					wr->src_task->pid, wr->dst_task->pid,
 					false, set_uclamp);
+#else
+		trace_sched_big_task_rotation(wr->src_cpu, wr->dst_cpu,
+					wr->src_task->pid, wr->dst_task->pid,
+					false, false);
+#endif
 	}
 }
 
@@ -12040,7 +12046,9 @@ void check_for_migration(struct task_struct *p)
 	int cpu = task_cpu(p);
 	struct rq *rq = cpu_rq(cpu);
 	int i, heavy_task = 0;
+#ifdef CONFIG_MTK_EAS_CTRL
 	struct task_rotate_reset_uclamp_work *wr = NULL;
+#endif
 
 	for_each_possible_cpu(i) {
 		struct rq *rq = cpu_rq(i);
@@ -12051,12 +12059,14 @@ void check_for_migration(struct task_struct *p)
 			heavy_task += 1;
 	}
 
+#ifdef CONFIG_MTK_EAS_CTRL
 	if (heavy_task < HEAVY_TASK_NUM && set_uclamp) {
 		wr = &task_rotate_reset_uclamp_works;
 		if (wr) {
 			queue_work_on(cpu, system_highpri_wq, &wr->w);
 		}
 	}
+#endif
 #if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
 	if (rq->misfit_task_load || (sysctl_sched_assist_enabled && (sysctl_slide_boost_enabled || sched_assist_scene(SA_LAUNCHER_SI)) && is_heavy_ux_task(p) && ux_task_misfit(p, cpu))) {
 #else

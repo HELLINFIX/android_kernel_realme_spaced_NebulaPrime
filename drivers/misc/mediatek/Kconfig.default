@@ -120,8 +120,6 @@ config ANDROID_DEFAULT_SETTING
 	select MAGIC_SYSRQ
 	select MD
 	select MEMBARRIER
-	select MEMCG
-	select MEMCG_SWAP
 	select MMU
 	select MODULES
 	select MODULE_UNLOAD
@@ -213,10 +211,8 @@ config ANDROID_DEFAULT_SETTING
 	select PPPOL2TP
 	select PPTP
 	select PREEMPT
-	select PROCESS_RECLAIM
 	select PROC_FS
 	select PROFILING
-	select PSI
 	select QFMT_V2
 	select QUOTA
 	select QUOTACTL

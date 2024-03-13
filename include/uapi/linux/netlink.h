@@ -32,10 +32,6 @@
 
 #define NETLINK_INET_DIAG	NETLINK_SOCK_DIAG
 
-#ifdef OPLUS_FEATURE_HANS_FREEZE
-#define NETLINK_OPLUS_HANS       29      /* Socket for freezing solution*/
-#endif /*OPLUS_FEATURE_HANS_FREEZE*/
-
 //#ifdef OPLUS_FEATURE_THEIA
 //should match with oppo_theia/include/TheiaKeventThread.h define
 #define OPLUS_NETLINK_THEIA_KEVENT 43

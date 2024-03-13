@@ -63,9 +63,6 @@ source "drivers/soc/oplus/system/oplus_mm_fb/Kconfig"
 source "drivers/soc/oplus/system/qcom_watchdog/Kconfig"
 #endif /* OPLUS_FEATURE_QCOM_WATCHDOG */
 
-#ifdef OPLUS_FEATURE_ACM
-source "drivers/soc/oplus/system/acm/Kconfig"
-#endif /* OPLUS_FEATURE_ACM */
 #ifdef OPLUS_FEATURE_THEIA
 source "drivers/soc/oplus/system/theia/Kconfig"
 #endif /* OPLUS_FEATURE_THEIA */

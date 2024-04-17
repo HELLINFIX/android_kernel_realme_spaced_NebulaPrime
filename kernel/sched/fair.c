@@ -11656,7 +11656,7 @@ void rt_idle_balance(struct rq *this_rq)
 		goto unlock;
 	}
 
-	if (walt_ktime_clock() - p->last_wake_ts < WALT_RT_PULL_THRESHOLD_NS)
+	// if (walt_ktime_clock() - p->last_sleep_ts < WALT_RT_PULL_THRESHOLD_NS)
 		goto unlock;
 
 	deactivate_task(src_rq, p, 0);

@@ -2,7 +2,8 @@
 /*
  * Copyright (C) 2020 Oplus. All rights reserved.
  */
-
+int sysctl_slide_boost_enabled = 0;
+int sysctl_boost_task_threshold = 0;
 
 #include <linux/version.h>
 #include <linux/sched.h>

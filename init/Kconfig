@@ -864,7 +864,6 @@ config MEMCG_SWAP
 config MEMCG_SWAP_ENABLED
 	bool "Swap controller enabled by default"
 	depends on MEMCG_SWAP
-	default y
 	help
 	  Memory Resource Controller Swap Extension comes with its price in
 	  a bigger memory consumption. General purpose distribution kernels
@@ -878,7 +877,6 @@ config MEMCG_SWAP_ENABLED
 config MEMCG_KMEM
 	bool
 	depends on MEMCG && !SLOB
-	default y
 
 config BLK_CGROUP
 	bool "IO controller"

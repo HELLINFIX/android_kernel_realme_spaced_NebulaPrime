@@ -328,7 +328,7 @@ compound_page_dtor * const compound_page_dtors[] = {
  */
 int min_free_kbytes = 65536;
 int user_min_free_kbytes = -1;
-int watermark_scale_factor = 12;
+int watermark_scale_factor = 20;
 
 /*
  * Extra memory for the system to try freeing. Used to temporarily

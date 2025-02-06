@@ -541,7 +541,7 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 						/* CH_SET_2G4_1_13 */
 
 			,			/* CH_SET_2G4_14_14 */
-			{115, BAND_5G, CHNL_SPAN_20, 36, 4, FALSE}
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, TRUE}
 			,			/* CH_SET_UNII_LOW_36_48 */
 			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
 			,			/* CH_SET_UNII_MID_52_64 */

@@ -36,6 +36,9 @@
 
 #include "power.h"
 
+#undef trace_suspend_resume
+#define trace_suspend_resume(x, ...)
+
 #define MTK_SOLUTION 1
 
 const char * const pm_labels[] = {
@@ -656,7 +659,6 @@ static int enter_state(suspend_state_t state)
 #else
 	ksys_sync();
 #endif
-	pr_cont("done.\n");
 	trace_suspend_resume(TPS("sync_filesystems"), 0, false);
 #endif
 

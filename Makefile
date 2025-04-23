@@ -750,6 +750,9 @@ else
 KBUILD_CFLAGS   += -O2
 endif
 
+# LLVM tunings
+KBUILD_LDFLAGS += -mllvm -inline-threshold=300
+
 KBUILD_CFLAGS += $(call cc-ifversion, -gt, 0900, \
 			$(call cc-option, -Wno-psabi) \
 			$(call cc-disable-warning,maybe-uninitialized,) \

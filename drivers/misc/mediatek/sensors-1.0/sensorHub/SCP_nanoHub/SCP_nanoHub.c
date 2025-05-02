@@ -770,7 +770,7 @@ static void SCP_sensorHub_IPI_handler(int id,
 	if (cmd != NULL)
 		cmd->handler(rsp, len);
 	else {
-		pr_err("cannot find cmd! try to find oplus cmd\n");
+		pr_debug("cannot find cmd! try to find oplus cmd\n");
 		SCP_sensorHub_set_oplus_cmd(rsp,len);
 	}
 	#endif
@@ -1074,7 +1074,7 @@ static int SCP_sensorHub_report_raw_data(struct data_unit_t *data_t)
 		if (data_t->time_stamp > raw_enable_time)
 			err = obj->dispatch_data_cb[sensor_id](data_t, NULL);
 		else
-			pr_info("ac:%d, e:%lld, d:%lld\n", data_t->flush_action,
+			pr_debug("ac:%d, e:%lld, d:%lld\n", data_t->flush_action,
 				raw_enable_time, data_t->time_stamp);
 	} else if (data_t->flush_action == FLUSH_ACTION) {
 		mutex_lock(&flush_mtx);
@@ -1128,7 +1128,7 @@ static int SCP_sensorHub_report_alt_data(struct data_unit_t *data_t)
 		if (data_t->time_stamp > alt_enable_time)
 			err = obj->dispatch_data_cb[alt_id](data_t, NULL);
 		else
-			pr_info("ac:%d, e:%lld, d:%lld\n", data_t->flush_action,
+			pr_debug("ac:%d, e:%lld, d:%lld\n", data_t->flush_action,
 				alt_enable_time, data_t->time_stamp);
 	} else if (data_t->flush_action == FLUSH_ACTION) {
 		mutex_lock(&flush_mtx);

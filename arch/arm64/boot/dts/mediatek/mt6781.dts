@@ -1868,6 +1868,7 @@
 
 	apdma: dma-controller@10200d80 {
 		compatible = "mediatek,mt6577-uart-dma";
+		status = "disabled";
 		reg = <0 0x10200d80 0 0x80>,
 		      <0 0x10200e00 0 0x80>,
 		      <0 0x10200e80 0 0x80>,
@@ -1885,6 +1886,7 @@
 
 	apuart0: serial@11002000 {
 		compatible = "mediatek,mt6577-uart";
+		status = "disabled";
 		reg = <0 0x11002000 0 0x1000>;
 		interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&clk26m>, <&infracfg_ao INFRACFG_AO_UART0_CG>;
@@ -1896,6 +1898,7 @@
 
 	apuart1: serial@11003000 {
 		compatible = "mediatek,mt6577-uart";
+		status = "disabled";
 		reg = <0 0x11003000 0 0x1000>;
 		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&clk26m>, <&infracfg_ao INFRACFG_AO_UART1_CG>;
@@ -2289,6 +2292,7 @@
 
 	ap_uart2@11018000 {
 		compatible = "mediatek,ap_uart2";
+		status = "disabled";
 		reg = <0 0x11018000 0 0x1000>;
 	};
 

@@ -31,9 +31,6 @@ obj-$(CONFIG_OPLUS_FEATURE_MM_FEEDBACK)         += oplus_mm_fb/
 obj-$(CONFIG_OPLUS_FEATURE_QCOM_WATCHDOG)     += qcom_watchdog/
 #endif /* OPLUS_FEATURE_QCOM_WATCHDOG */
 
-#ifdef OPLUS_FEATURE_ACM
-obj-$(CONFIG_OPLUS_FEATURE_ACM)     += acm/
-#endif /* OPLUS_FEATURE_ACM */
 #ifdef OPLUS_FEATURE_THEIA
 obj-$(CONFIG_OPLUS_FEATURE_THEIA)     += theia/
 #endif /* OPLUS_FEATURE_THEIA */

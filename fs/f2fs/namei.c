@@ -593,7 +593,7 @@ static int f2fs_unlink(struct inode *dir, struct dentry *dentry)
 	}
 
 	if (unlikely(inode->i_nlink == 0)) {
-		f2fs_msg(inode->i_sb, KERN_WARNING,
+		f2fs_printk(sbi, KERN_WARNING,
 			 "%s: inode (ino=%lx) has zero i_nlink",
 			 __func__, inode->i_ino);
 		err = -EFSCORRUPTED;
@@ -722,7 +722,7 @@ out_f2fs_handle_failed_inode:
 	f2fs_handle_failed_inode(inode);
 out_free_encrypted_link:
 	if (disk_link.name != (unsigned char *)symname)
-		kfree(disk_link.name);
+		kvfree(disk_link.name);
 	return err;
 }
 
@@ -1052,11 +1052,9 @@ static int f2fs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	if (whiteout) {
 		set_inode_flag(whiteout, FI_INC_LINK);
 		err = f2fs_add_link(old_dentry, whiteout);
-		if (err) {
-			d_invalidate(old_dentry);
-			d_invalidate(new_dentry);
+		if (err)
 			goto put_out_dir;
-		}
+
 		spin_lock(&whiteout->i_lock);
 		whiteout->i_state &= ~I_LINKABLE;
 		spin_unlock(&whiteout->i_lock);

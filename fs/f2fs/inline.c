@@ -334,8 +334,7 @@ process_inline:
 
 struct f2fs_dir_entry *f2fs_find_in_inline_dir(struct inode *dir,
 					const struct f2fs_filename *fname,
-					struct page **res_page,
-					bool use_hash)
+					struct page **res_page)
 {
 	struct f2fs_sb_info *sbi = F2FS_SB(dir->i_sb);
 	struct f2fs_dir_entry *de;
@@ -352,7 +351,7 @@ struct f2fs_dir_entry *f2fs_find_in_inline_dir(struct inode *dir,
 	inline_dentry = inline_data_addr(dir, ipage);
 
 	make_dentry_ptr_inline(dir, &d, inline_dentry);
-	de = f2fs_find_target_dentry(&d, fname, NULL, use_hash);
+	de = f2fs_find_target_dentry(&d, fname, NULL);
 	unlock_page(ipage);
 	if (de)
 		*res_page = ipage;
@@ -545,7 +544,7 @@ static int f2fs_move_rehashed_dirents(struct inode *dir, struct page *ipage,
 			!f2fs_has_inline_xattr(dir))
 		F2FS_I(dir)->i_inline_xattr_size = 0;
 
-	kfree(backup_dentry);
+	kvfree(backup_dentry);
 	return 0;
 recover:
 	lock_page(ipage);
@@ -556,7 +555,7 @@ recover:
 	set_page_dirty(ipage);
 	f2fs_put_page(ipage, 1);
 
-	kfree(backup_dentry);
+	kvfree(backup_dentry);
 	return err;
 }
 

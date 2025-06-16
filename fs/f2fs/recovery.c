@@ -338,7 +338,7 @@ static int recover_inode(struct inode *inode, struct page *page)
 }
 
 static int find_fsync_dnodes(struct f2fs_sb_info *sbi, struct list_head *head,
-				bool check_only, bool *new_inode)
+				bool check_only)
 {
 	struct curseg_info *curseg;
 	struct page *page = NULL;
@@ -395,8 +395,6 @@ static int find_fsync_dnodes(struct f2fs_sb_info *sbi, struct list_head *head,
 			if (IS_ERR(entry)) {
 				err = PTR_ERR(entry);
 				if (err == -ENOENT) {
-					if (check_only)
-						*new_inode = true;
 					err = 0;
 					goto next;
 				}
@@ -684,14 +682,6 @@ retry_prev:
 				goto err;
 			}
 
-			if (f2fs_is_valid_blkaddr(sbi, dest,
-					DATA_GENERIC_ENHANCE_UPDATE)) {
-				f2fs_err(sbi, "Inconsistent dest blkaddr:%u, ino:%lu, ofs:%u",
-					dest, inode->i_ino, dn.ofs_in_node);
-				err = -EFSCORRUPTED;
-				goto err;
-			}
-
 			/* write dummy data page */
 			f2fs_replace_block(sbi, &dn, src, dest,
 						ni.version, false, false);
@@ -791,7 +781,6 @@ int f2fs_recover_fsync_data(struct f2fs_sb_info *sbi, bool check_only)
 	int ret = 0;
 	unsigned long s_flags = sbi->sb->s_flags;
 	bool need_writecp = false;
-	bool new_inode = false;
 #ifdef CONFIG_QUOTA
 	int quota_enabled;
 #endif
@@ -823,8 +812,8 @@ int f2fs_recover_fsync_data(struct f2fs_sb_info *sbi, bool check_only)
 	mutex_lock(&sbi->cp_mutex);
 
 	/* step #1: find fsynced inode numbers */
-	err = find_fsync_dnodes(sbi, &inode_list, check_only, &new_inode);
-	if (err < 0 || (list_empty(&inode_list) && (!check_only || !new_inode)))
+	err = find_fsync_dnodes(sbi, &inode_list, check_only);
+	if (err || list_empty(&inode_list))
 		goto skip;
 
 	if (check_only) {

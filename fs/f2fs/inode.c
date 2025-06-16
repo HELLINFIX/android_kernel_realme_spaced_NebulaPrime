@@ -745,30 +745,11 @@ retry:
 	}
 
 	if (!err) {
-  	   if (READ_ONCE(sbi->cp_rwsem.owner) != current) {
 		f2fs_lock_op(sbi);
 		err = f2fs_remove_inode_page(inode);
 		f2fs_unlock_op(sbi);
-	 } else {
-		err = f2fs_remove_inode_page(inode);
-		}
-		if (err == -ENOENT) {
-		err = 0;
-
-
-			/*
-			 * in fuzzed image, another node may has the same
-			 * block address as inode's, if it was truncated
-			 * previously, truncation of inode node will fail.
-			 */
-			if (is_inode_flag_set(inode, FI_DIRTY_INODE)) {
-				f2fs_warn(F2FS_I_SB(inode),
-					"f2fs_evict_inode: inconsistent node id, ino:%lu",
-					inode->i_ino);
-				f2fs_inode_synced(inode);
-				set_sbi_flag(sbi, SBI_NEED_FSCK);
-			}
-		}
+		if (err == -ENOENT)
+			err = 0;
 	}
 
 	/* give more chances, if ENOMEM case */
@@ -781,7 +762,6 @@ retry:
 		f2fs_update_inode_page(inode);
 		if (dquot_initialize_needed(inode))
 			set_sbi_flag(sbi, SBI_QUOTA_NEED_REPAIR);
-	}
 
 		/*
 		 * If both f2fs_truncate() and f2fs_update_inode_page() failed
@@ -789,8 +769,7 @@ retry:
 		 * avoid triggering later f2fs_bug_on().
 		 */
 		if (is_inode_flag_set(inode, FI_DIRTY_INODE)) {
-			f2fs_msg(sbi->sb, KERN_WARNING,
-				"f2fs_evict_inode: inode is dirty, ino:%lu",
+			f2fs_warn(sbi, "f2fs_evict_inode: inode is dirty, ino:%lu",
 				inode->i_ino);
 			f2fs_inode_synced(inode);
 			set_sbi_flag(sbi, SBI_NEED_FSCK);
@@ -877,7 +856,6 @@ void f2fs_handle_failed_inode(struct inode *inode)
 	err = f2fs_get_node_info(sbi, inode->i_ino, &ni);
 	if (err) {
 		set_sbi_flag(sbi, SBI_NEED_FSCK);
-		set_inode_flag(inode, FI_FREE_NID);
 		f2fs_warn(sbi, "May loss orphan inode, run fsck to fix.");
 		goto out;
 	}

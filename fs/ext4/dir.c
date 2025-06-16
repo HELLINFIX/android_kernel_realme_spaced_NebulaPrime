@@ -108,13 +108,13 @@ int __ext4_check_dir_entry(const char *function, unsigned int line,
 				"bad entry in directory: %s - offset=%u, "
 				"inode=%u, rec_len=%d, size=%d fake=%d",
 				error_msg, offset, le32_to_cpu(de->inode),
-				rlen, size, fake);
+				rlen, de->name_len, size);
 	else
 		ext4_error_inode(dir, function, line, bh->b_blocknr,
 				"bad entry in directory: %s - offset=%u, "
 				"inode=%u, rec_len=%d, size=%d fake=%d",
 				 error_msg, offset, le32_to_cpu(de->inode),
-				 rlen, size, fake);
+				 rlen, de->name_len, size);
 
 	return 1;
 }

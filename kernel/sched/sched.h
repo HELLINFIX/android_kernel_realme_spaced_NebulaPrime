@@ -586,8 +586,8 @@ struct cfs_rq {
 	s64			runtime_remaining;
 
 	u64			throttled_clock;
-	u64			throttled_clock_task;
-	u64			throttled_clock_task_time;
+	u64			throttled_clock_pelt;
+	u64			throttled_clock_pelt_time;
 	int			throttled;
 	int			throttle_count;
 	struct list_head	throttled_list;
@@ -2370,7 +2370,8 @@ unsigned long uclamp_eff_value(struct task_struct *p, enum uclamp_id clamp_id);
 inline void uclamp_se_set(struct uclamp_se *uc_se,
 				 unsigned int value, bool user_defined);
 void
-uclamp_update_active_tasks(struct cgroup_subsys_state *css);
+uclamp_update_active_tasks(struct cgroup_subsys_state *css,
+			   unsigned int clamps);
 
 /**
  * uclamp_rq_util_with - clamp @util with @rq and @p effective uclamp values.
@@ -2403,10 +2404,20 @@ unsigned long uclamp_rq_util_with(struct rq *rq, unsigned long util,
 	max_util = READ_ONCE(rq->uclamp[UCLAMP_MAX].value);
 
 	if (p) {
-		min_util = max(min_util, uclamp_eff_value(p, UCLAMP_MIN));
-		max_util = max(max_util, uclamp_eff_value(p, UCLAMP_MAX));
+		min_util = uclamp_eff_value(p, UCLAMP_MIN);
+		max_util = uclamp_eff_value(p, UCLAMP_MAX);
+
+		/*
+		 * Ignore last runnable task's max clamp, as this task will
+		 * reset it. Similarly, no need to read the rq's min clamp.
+		 */
+		if (rq->uclamp_flags & UCLAMP_FLAG_IDLE)
+			goto out;
 	}
 
+	min_util = max_t(unsigned long, min_util, READ_ONCE(rq->uclamp[UCLAMP_MIN].value));
+	max_util = max_t(unsigned long, max_util, READ_ONCE(rq->uclamp[UCLAMP_MAX].value));
+out:
 	/*
 	 * Since CPU's {min,max}_util clamps are MAX aggregated considering
 	 * RUNNABLE tasks with _different_ clamps, we can end up with an

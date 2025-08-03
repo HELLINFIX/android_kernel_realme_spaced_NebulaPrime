@@ -1071,7 +1071,7 @@ EXPORT_SYMBOL_GPL(rndis_add_hdr);
 
 void rndis_free_response(struct rndis_params *params, u8 *buf)
 {
-	rndis_resp_t *r;
+	rndis_resp_t *r, *n;
 	struct list_head *act, *tmp;
 
 	spin_lock(&params->resp_lock);
@@ -1087,7 +1087,7 @@ EXPORT_SYMBOL_GPL(rndis_free_response);
 
 u8 *rndis_get_next_response(struct rndis_params *params, u32 *length)
 {
-	rndis_resp_t *r;
+	rndis_resp_t *r, *n;
 	struct list_head *act, *tmp;
 
 	if (!length) return NULL;

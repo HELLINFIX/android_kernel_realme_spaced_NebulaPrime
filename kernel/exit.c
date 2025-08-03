@@ -1,3 +1,4 @@
+
 /*
  *  linux/kernel/exit.c
  *
@@ -68,13 +69,6 @@
 #include <asm/unistd.h>
 #include <asm/pgtable.h>
 #include <asm/mmu_context.h>
-
-#ifdef CONFIG_KERNEL_LOCK_OPT
-#include <linux/klockopt/klockopt.h>
-#endif
-
-#ifdef OPLUS_BUG_STABILITY
-#include <soc/oplus/system/oppo_process.h>
 
 /*
  * The default value should be high enough to not crash a system that randomly
@@ -453,12 +447,6 @@ kill_orphaned_pgrp(struct task_struct *tsk, struct task_struct *parent)
 	    task_session(parent) == task_session(tsk) &&
 	    will_become_orphaned_pgrp(pgrp, ignored_task) &&
 	    has_stopped_jobs(pgrp)) {
-#ifdef OPLUS_BUG_STABILITY
-            if (oppo_is_android_core_group(pgrp)) {
-                printk("kill_orphaned_pgrp: find android core process will be hungup, ignored it, only hungup itself:%s:%d , current=%d \n",tsk->comm,tsk->pid,current->pid);
-                return;
-            }
-#endif /*OPLUS_BUG_STABILITY*/
 		__kill_pgrp_info(SIGHUP, SEND_SIG_PRIV, pgrp);
 		__kill_pgrp_info(SIGCONT, SEND_SIG_PRIV, pgrp);
 	}
@@ -549,7 +537,6 @@ assign_new_owner:
 		goto retry;
 	}
 	mm->owner = c;
-	lru_gen_migrate_mm(mm);
 	task_unlock(c);
 	put_task_struct(c);
 }
@@ -845,11 +832,6 @@ void __noreturn do_exit(long code)
 {
 	struct task_struct *tsk = current;
 	int group_dead;
-#ifdef OPLUS_BUG_STABILITY
-    if (is_critial_process(tsk)) {
-        printk("critical svc %d:%s exit with %ld !\n", tsk->pid, tsk->comm,code);
-    }
-#endif /*OPLUS_BUG_STABILITY*/
 
 	/*
 	 * We can get here from a kernel oops, sometimes with preemption off.
@@ -880,7 +862,6 @@ void __noreturn do_exit(long code)
 			preempt_count());
 		preempt_count_set(PREEMPT_ENABLED);
 	}
-
 
 	profile_task_exit(tsk);
 	kcov_task_exit(tsk);

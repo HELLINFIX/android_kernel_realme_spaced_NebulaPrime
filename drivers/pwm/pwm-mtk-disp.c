@@ -194,8 +194,9 @@ static int mtk_disp_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm,
 		clk_disable_unprepare(mdp->clk_mm);
 		clk_disable_unprepare(mdp->clk_main);
 		return -EINVAL;
-	dev_dbg(mdp->chip.dev, "rate=%lld clk_div=%d\n", rate, clk_div);
+	}
 
+        dev_dbg(mdp->chip.dev, "rate=%lld clk_div=%d\n", rate, clk_div);
 	div = NSEC_PER_SEC * (clk_div + 1);
 	period = div64_u64(rate * period_ns, div);
 	if (period > 0)
@@ -357,13 +358,32 @@ static int mtk_disp_pwm_probe(struct platform_device *pdev)
 
 	ret = pwmchip_add(&mdp->chip);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "pwmchip_add() failed: %pe\n", ERR_PTR(ret));
-		return ret;
+		dev_err(&pdev->dev, "pwmchip_add() failed: %d\n", ret);
+		goto disable_clk_mm;
 	}
 
 	platform_set_drvdata(pdev, mdp);
 
+	/*
+	 * For MT2701, disable double buffer before writing register
+	 * and select manual mode and use PWM_PERIOD/PWM_HIGH_WIDTH.
+	 */
+	if (!mdp->data->has_commit) {
+		mtk_disp_pwm_update_bits(mdp, mdp->data->bls_debug,
+					 mdp->data->bls_debug_mask,
+					 mdp->data->bls_debug_mask);
+		mtk_disp_pwm_update_bits(mdp, mdp->data->con0,
+					 mdp->data->con0_sel,
+					 mdp->data->con0_sel);
+	}
+
 	return 0;
+
+disable_clk_mm:
+	clk_unprepare(mdp->clk_mm);
+disable_clk_main:
+	clk_unprepare(mdp->clk_main);
+	return ret;
 }
 
 static int mtk_disp_pwm_remove(struct platform_device *pdev)

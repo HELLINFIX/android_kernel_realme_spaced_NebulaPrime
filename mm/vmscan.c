@@ -129,13 +129,6 @@ struct scan_control {
 	/* Number of pages freed so far during a call to shrink_zones() */
 	unsigned long nr_reclaimed;
 
-	/*
-	 * Reclaim pages from a vma. If the page is shared by other tasks
-	 * it is zapped from a vma without reclaim so it ends up remaining
-	 * on memory until last task zap it.
-	 */
-	struct vm_area_struct *target_vma;
-
 	struct {
 		unsigned int dirty;
 		unsigned int unqueued_dirty;
@@ -1362,7 +1355,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 
 			if (unlikely(PageTransHuge(page)))
 				flags |= TTU_SPLIT_HUGE_PMD;
-			if (!try_to_unmap(page, flags, sc->target_vma)) {
+			if (!try_to_unmap(page, flags)) {
 				nr_unmap_fail++;
 				goto activate_locked;
 			}
@@ -1641,8 +1634,7 @@ unsigned long nswap_reclaim_page_list(struct list_head *page_list,
 #endif
 
 #ifdef CONFIG_PROCESS_RECLAIM
-unsigned long reclaim_pages_from_list(struct list_head *page_list,
-					struct vm_area_struct *vma)
+unsigned long reclaim_pages_from_list(struct list_head *page_list)
 {
 	unsigned long nr_isolated[2] = {0, };
 	struct pglist_data *pgdat = NULL;
@@ -1652,7 +1644,6 @@ unsigned long reclaim_pages_from_list(struct list_head *page_list,
 		.may_writepage = 1,
 		.may_unmap = 1,
 		.may_swap = 1,
-		.target_vma = vma,
 	};
 
 	unsigned long nr_reclaimed;

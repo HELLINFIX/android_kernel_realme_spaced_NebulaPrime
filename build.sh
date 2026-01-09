@@ -23,8 +23,8 @@ function compile() {
   sudo apt install -y libelf-dev libarchive-tools zstd flex bc ccache
 
   # Download clang if not present
-  if [[ ! -d "clang" ]]; then mkdir clang && cd clang
-  bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) -S
+  if [[ ! -d "clang" ]]; then git clone https://gitlab.com/HELLINFIX/aosp-clang-17.0.0.git clang
+  cd clang
   bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) --patch=glibc
   ls
   cd ..

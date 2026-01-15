@@ -20,7 +20,7 @@ function compile() {
 
   # Install Kernel Dependencies
   sudo apt update
-  sudo apt install -y libelf-dev libarchive-tools zstd flex bc ccache
+  sudo apt install -y libelf-dev libarchive-tools zstd flex bc ccache libc++-dev libc++abi-dev
 
   # Download clang if not present
   if [[ ! -d "clang" ]]; then git clone https://gitlab.com/HELLINFIX/aosp-clang-17.0.0.git clang

@@ -218,6 +218,10 @@ void tcp_cleanup_congestion_control(struct sock *sk)
 /* Used by sysctl to change default congestion control */
 int tcp_set_default_congestion_control(struct net *net, const char *name)
 {
+    /* Prevent vendor/user from changing algorithm */
+    if (strcmp(name, "westwood") != 0)
+        return -EPERM;
+
 	struct tcp_congestion_ops *ca;
 	const struct tcp_congestion_ops *prev;
 	int ret;

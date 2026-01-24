@@ -1,0 +1,31 @@
+name: Build Kernel on GitHub Actions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Update Environment
+      run: sudo apt update -y
+
+    - name: Install Dependencies
+      run: sudo apt install -y git build-essential zip curl
+
+    - name: Download Clang Toolchain
+      run: bash build.sh --tools
+
+    - name: Build Nebula.
+      run: bash build.sh --build
+
+    - name: Upload kernel
+      uses: actions/upload-artifact@v4
+      with:
+        name: Nebula
+        path: Nebula-${TANGGAL}.zip

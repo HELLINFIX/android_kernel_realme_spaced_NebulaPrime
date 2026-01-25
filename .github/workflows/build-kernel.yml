@@ -1,31 +1,117 @@
-name: Build Kernel on GitHub Actions
+name: Build Nebula Prime Kernel (SPACED)
 
 on:
+  push:
+    branches:
+      - nebula-prime
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+
+    env:
+      ARCH: arm64
+      SUBARCH: arm64
+      KBUILD_BUILD_USER: HELLINFIX
+      KBUILD_BUILD_HOST: Nebula
+      USE_CCACHE: 1
+      LC_ALL: C
+
     steps:
-    - name: Checkout source
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-    - name: Update Environment
-      run: sudo apt update -y
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            bc flex zstd ccache curl git zip unzip \
+            libelf-dev libarchive-tools libc++-dev libc++abi-dev
 
-    - name: Install Dependencies
-      run: sudo apt install -y git build-essential zip curl
+      - name: Setup ccache
+        run: |
+          echo "CCACHE_DIR=${HOME}/.ccache" >> $GITHUB_ENV
+          ccache -M 20G
 
-    - name: Download Clang Toolchain
-      run: bash build.sh --tools
+      - name: Clone AOSP Clang 17
+        run: |
+          git clone https://gitlab.com/HELLINFIX/aosp-clang-17.0.0.git clang
+          cd clang
+          bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) --patch=glibc
+          cd ..
 
-    - name: Build Nebula.
-      run: bash build.sh --build
+      # ===== KernelSU-Next (FIXED, SAFE) =====
+      - name: Setup KernelSU-Next v1.1.1
+        run: |
+          curl -LSs \
+            https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh \
+            -o ksu_setup.sh
 
-    - name: Upload kernel
-      uses: actions/upload-artifact@v4
-      with:
-        name: Nebula
-        path: Nebula-${TANGGAL}.zip
+          chmod +x ksu_setup.sh
+          bash ksu_setup.sh v1.1.1
+
+      - name: Build kernel
+        run: |
+          export PATH="${PWD}/clang/bin:${PATH}"
+
+          make O=out spaced_defconfig
+          make -j$(nproc) \
+            O=out \
+            CC=clang \
+            LLVM=1 \
+            CONFIG_NO_ERROR_ON_MISMATCH=y \
+            2>&1 | tee build.log
+
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+
+      - name: Package with AnyKernel3
+        run: |
+          IMAGE=out/arch/arm64/boot/Image.gz-dtb
+
+          if [ ! -f "$IMAGE" ]; then
+            echo "Kernel build failed"
+            exit 1
+          fi
+
+          git clone --depth=1 https://github.com/HELLINFIX/AnyKernel3 AnyKernel
+          cp "$IMAGE" AnyKernel/
+
+          cd AnyKernel
+          ZIP_NAME="Nebula-$(date +'%Y%m%d-%H').zip"
+          zip -r9 "$ZIP_NAME" *
+          echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+
+      - name: Upload kernel zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nebula-Kernel
+          path: AnyKernel/*.zip
+
+      - name: Send Telegram build status
+        if: always()
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TG_CHAT_ID }}
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          message: |
+            Nebula Prime Kernel Build
+            Device: Realme SPACED (RM6781)
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Status: ${{ job.status }}
+
+      - name: Send kernel zip to Telegram
+        if: success()
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          curl -s \
+            -F "chat_id=${TG_CHAT_ID}" \
+            -F "document=@AnyKernel/${ZIP_NAME}" \
+            "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"

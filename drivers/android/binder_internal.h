@@ -177,6 +177,7 @@ struct binder_work {
 	enum binder_work_type {
 		BINDER_WORK_TRANSACTION = 1,
 		BINDER_WORK_TRANSACTION_COMPLETE,
+                BINDER_WORK_TRANSACTION_ONEWAY_SPAM_SUSPECT,
 		BINDER_WORK_RETURN_ERROR,
 		BINDER_WORK_NODE,
 		BINDER_WORK_DEAD_BINDER,
@@ -451,6 +452,11 @@ struct binder_proc {
 	const struct cred *cred;
 	struct hlist_node deferred_work_node;
 	int deferred_work;
+	int outstanding_txns;
+	bool is_frozen;
+	wait_queue_head_t freeze_wait;
+	bool sync_recv;
+	bool async_recv;
 	bool is_dead;
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	int proc_type;
@@ -470,6 +476,7 @@ struct binder_proc {
 	spinlock_t inner_lock;
 	spinlock_t outer_lock;
 	struct dentry *binderfs_entry;
+        bool oneway_spam_detection_enabled;
 };
 
 enum {

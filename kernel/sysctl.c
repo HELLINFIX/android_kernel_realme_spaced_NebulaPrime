@@ -109,8 +109,8 @@ extern unsigned int sysctl_sched_walt_init_task_load_pct;
 
 #if defined(CONFIG_SYSCTL)
 
-static int android_swappiness_min = 100;
-static int android_swappiness_max = 160;
+static int android_swappiness_min = 50;
+static int android_swappiness_max = 100;
 
 
 /* External variables not in a header file. */

@@ -212,7 +212,6 @@ config ANDROID_DEFAULT_SETTING
 	select PPTP
 	select PREEMPT
 	select PROC_FS
-	select PROFILING
 	select QFMT_V2
 	select QUOTA
 	select QUOTACTL

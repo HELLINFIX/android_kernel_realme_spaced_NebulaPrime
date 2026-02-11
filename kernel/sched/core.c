@@ -993,24 +993,19 @@ uclamp_eff_get(struct task_struct *p, enum uclamp_id clamp_id)
 		return uc_max;
 
 	return uc_req;
+
 }
-extern int sysctl_set_ux_uclamp_enable;
 unsigned long uclamp_eff_value(struct task_struct *p, enum uclamp_id clamp_id)
 {
 	struct uclamp_se uc_eff;
-	unsigned int uc_value;
-	if (p->ux_state & SA_TYPE_TURBO && clamp_id == UCLAMP_MIN && sysctl_set_ux_uclamp_enable) {
-		uc_value = ux_uclamp_value;
-		if (p->uclamp[clamp_id].active) {
-			if (p->uclamp[clamp_id].value > uc_value)
-				uc_value = p->uclamp[clamp_id].value;
-		 } else {
-			uc_eff =  uclamp_eff_get(p, clamp_id);
-			if (uc_eff.value > uc_value)
-				uc_value = uc_eff.value;
-		}
-		return (unsigned long)uc_value;
-	}
+
+	/* Task currently refcounted: use back-annotated (effective) value */
+	if (p->uclamp[clamp_id].active)
+		return (unsigned long)p->uclamp[clamp_id].value;
+
+	uc_eff = uclamp_eff_get(p, clamp_id);
+
+	
 	/* Task currently refcounted: use back-annotated (effective) value */
 	if (p->uclamp[clamp_id].active)
 		return (unsigned long)p->uclamp[clamp_id].value;
@@ -1048,10 +1043,6 @@ static inline void uclamp_rq_inc_id(struct rq *rq, struct task_struct *p,
 	uc_se->active = true;
 
 	uclamp_idle_reset(rq, clamp_id, uc_se->value);
-
-	tmp_value = uc_se->value;
-	if (p->ux_state & SA_TYPE_TURBO && clamp_id == UCLAMP_MIN && sysctl_set_ux_uclamp_enable)
-		tmp_value = ux_uclamp_value;
 
 	/*
 	 * Local max aggregation: rq buckets always track the max

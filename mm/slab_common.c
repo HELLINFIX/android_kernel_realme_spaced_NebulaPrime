@@ -682,7 +682,7 @@ static void kmemcg_deactivate_workfn(struct work_struct *work)
 	put_online_mems();
 	put_online_cpus();
 
-	/* done, put the ref from kmemcg_cache_deactivate() */
+	/* done, put the ref from slab_deactivate_memcg_cache_rcu_sched() */
 	css_put(&s->memcg_params.memcg->css);
 }
 
@@ -700,7 +700,19 @@ static void kmemcg_deactivate_rcufn(struct rcu_head *head)
 	queue_work(memcg_kmem_cache_wq, &s->memcg_params.deact_work);
 }
 
-static void kmemcg_cache_deactivate(struct kmem_cache *s)
+/**
+ * slab_deactivate_memcg_cache_rcu_sched - schedule deactivation after a
+ *					   sched RCU grace period
+ * @s: target kmem_cache
+ * @deact_fn: deactivation function to call
+ *
+ * Schedule @deact_fn to be invoked with online cpus, mems and slab_mutex
+ * held after a sched RCU grace period.  The slab is guaranteed to stay
+ * alive until @deact_fn is finished.  This is to be used from
+ * __kmemcg_cache_deactivate().
+ */
+void slab_deactivate_memcg_cache_rcu_sched(struct kmem_cache *s,
+					   void (*deact_fn)(struct kmem_cache *))
 {
 	if (WARN_ON_ONCE(is_root_cache(s)) ||
 	    WARN_ON_ONCE(s->memcg_params.deact_fn))
@@ -714,8 +726,6 @@ static void kmemcg_cache_deactivate(struct kmem_cache *s)
 	spin_lock_irq(&memcg_kmem_wq_lock);
 	if (s->memcg_params.root_cache->memcg_params.dying)
 		goto unlock;
-
-	__kmemcg_cache_deactivate(s);
 
 	/* pin memcg so that @s doesn't get destroyed in the middle */
 	css_get(&s->memcg_params.memcg->css);
@@ -745,7 +755,7 @@ void memcg_deactivate_kmem_caches(struct mem_cgroup *memcg)
 		if (!c)
 			continue;
 
-		kmemcg_cache_deactivate(c);
+		__kmemcg_cache_deactivate(c);
 		arr->entries[idx] = NULL;
 	}
 	mutex_unlock(&slab_mutex);

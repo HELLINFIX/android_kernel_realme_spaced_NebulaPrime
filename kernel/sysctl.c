@@ -109,10 +109,6 @@ extern unsigned int sysctl_sched_walt_init_task_load_pct;
 
 #if defined(CONFIG_SYSCTL)
 
-static int android_swappiness_min = 50;
-static int android_swappiness_max = 100;
-
-
 /* External variables not in a header file. */
 extern int suid_dumpable;
 #ifdef CONFIG_COREDUMP
@@ -1647,9 +1643,8 @@ static struct ctl_table vm_table[] = {
 		.maxlen		= sizeof(vm_swappiness),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1 = &android_swappiness_min,
-		.extra2 = &android_swappiness_max,
-
+		.extra1		= &zero,
+		.extra2		= &one_hundred,
 	},
 #ifdef CONFIG_DYNAMIC_TUNNING_SWAPPINESS
 	{

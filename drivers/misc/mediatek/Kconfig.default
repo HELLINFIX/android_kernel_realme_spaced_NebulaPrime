@@ -132,7 +132,6 @@ config ANDROID_DEFAULT_SETTING
 	select NET_CLS_ACT
 	select NET_CLS_BPF
 	select NET_CLS_U32
-	select NET_SCH_TBF
 	select NETDEVICES
 	select NET_CLS_MATCHALL
 	select NET_EMATCH
@@ -179,8 +178,6 @@ config ANDROID_DEFAULT_SETTING
 	select NET_KEY
 	select NET_NS
 	select NET_SCHED
-	select NET_SCH_HTB
-	select NET_SCH_INGRESS
 	select NF_CONNTRACK
 	select NF_CONNTRACK_AMANDA
 	select NF_CONNTRACK_EVENTS
@@ -204,12 +201,6 @@ config ANDROID_DEFAULT_SETTING
 	select PLAYSTATION_FF
 	select PM_WAKELOCKS
 	select POSIX_TIMERS
-	select PPP
-	select PPP_BSDCOMP
-	select PPP_DEFLATE
-	select PPP_MPPE
-	select PPPOL2TP
-	select PPTP
 	select PREEMPT
 	select PROC_FS
 	select QFMT_V2

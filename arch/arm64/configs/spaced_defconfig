@@ -2035,7 +2035,7 @@ CONFIG_MTK_RTC=y
 #
 # Performance, Power, and Thermal
 #
-# CONFIG_MTK_PERFORMANCE_MODULE is not set
+CONFIG_MTK_PERFORMANCE_MODULE=y
 # CONFIG_MTK_PERF_COMMON is not set
 # CONFIG_MTK_TOPO_CTRL is not set
 # CONFIG_MTK_PERF_OBSERVER is not set

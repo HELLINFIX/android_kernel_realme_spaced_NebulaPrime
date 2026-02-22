@@ -1,7 +1,7 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (c) 2019 MediaTek Inc.
-*/
+ */
 
 #include <linux/clk.h>
 #include <linux/of_address.h>
@@ -27,7 +27,7 @@
 #include <linux/soc/mediatek/mtk-pm-qos.h>
 #include <mmdvfs_pmqos.h>
 #include "vcodec_dvfs.h"
-#define STD_VENC_FREQ 273
+#define STD_VENC_FREQ 250
 #define STD_LUMA_BW 100
 #define STD_CHROMA_BW 50
 static struct mtk_pm_qos_request venc_qos_req_f;
@@ -36,12 +36,11 @@ static u64 venc_freq;
 static u32 venc_freq_step_size;
 static u64 venc_freq_steps[MAX_FREQ_STEP];
 /*
-static struct codec_history *venc_hists;
-static struct codec_job *venc_jobs;
-*/
-static u64 venc_req_freq[2];
+ * static struct codec_history *venc_hists;
+ * static struct codec_job *venc_jobs;
+ */
 /* 1080p60, 4k30, 4k60, 1 core 4k60*/
-static u64 venc_freq_map[] = {273, 312, 416, 624};
+static u64 venc_freq_map[] = {249, 364, 458, 624};
 
 #endif
 
@@ -49,32 +48,26 @@ static u64 venc_freq_map[] = {273, 312, 416, 624};
 #include <mtk_smi.h>
 #include <mtk_qos_bound.h>
 #include "vcodec_bw.h"
-#define CORE_NUM 2
+#define CORE_NUM 1
 /*
-static unsigned int gVENCFrmTRAVC[3] = {6, 12, 6};
-static unsigned int gVENCFrmTRHEVC[3] = {6, 12, 6};
-
-static long long venc_start_time;
-static struct vcodec_bw *venc_bw;
-*/
-static struct plist_head venc_rlist[CORE_NUM];
-static struct mm_qos_request venc_rcpu[CORE_NUM];
-static struct mm_qos_request venc_rec[CORE_NUM];
-static struct mm_qos_request venc_bsdma[CORE_NUM];
-static struct mm_qos_request venc_sub_w_luma[CORE_NUM];
-static struct mm_qos_request venc_sv_comv[CORE_NUM];
-static struct mm_qos_request venc_rd_comv[CORE_NUM];
-static struct mm_qos_request venc_nbm_rdma[CORE_NUM];
-static struct mm_qos_request venc_nbm_rdma_lite[CORE_NUM];
-static struct mm_qos_request venc_fcs_nbm_rdma[CORE_NUM];
-static struct mm_qos_request venc_nbm_wdma[CORE_NUM];
-static struct mm_qos_request venc_nbm_wdma_lite[CORE_NUM];
-static struct mm_qos_request venc_fcs_nbm_wdma[CORE_NUM];
-static struct mm_qos_request venc_sub_r_luma[CORE_NUM];
-static struct mm_qos_request venc_cur_luma[CORE_NUM];
-static struct mm_qos_request venc_cur_chroma[CORE_NUM];
-static struct mm_qos_request venc_ref_luma[CORE_NUM];
-static struct mm_qos_request venc_ref_chroma[CORE_NUM];
+ * static unsigned int gVENCFrmTRAVC[3] = {6, 12, 6};
+ * static unsigned int gVENCFrmTRHEVC[3] = {6, 12, 6};
+ *
+ * static long long venc_start_time;
+ * static struct vcodec_bw *venc_bw;
+ */
+static struct plist_head venc_rlist;
+static struct mm_qos_request venc_rcpu;
+static struct mm_qos_request venc_rec;
+static struct mm_qos_request venc_bsdma;
+static struct mm_qos_request venc_sv_comv;
+static struct mm_qos_request venc_rd_comv;
+static struct mm_qos_request venc_cur_luma;
+static struct mm_qos_request venc_cur_chroma;
+static struct mm_qos_request venc_ref_luma;
+static struct mm_qos_request venc_ref_chroma;
+static struct mm_qos_request venc_sub_r_luma;
+static struct mm_qos_request venc_sub_w_luma;
 #endif
 
 
@@ -88,28 +81,18 @@ struct temp_job {
 	int visible_width; /* temp usage only, will use kcy */
 	int visible_height; /* temp usage only, will use kcy */
 	int operation_rate;
-	int bitratemode;
 	long long submit;
 	int kcy;
-	int cur_inst_cnt;
 	struct temp_job *next;
 };
-static struct temp_job *temp_venc_jobs[CORE_NUM];
+static struct temp_job *temp_venc_jobs;
 
 struct temp_job *new_job_from_info(struct mtk_vcodec_ctx *ctx, int core_id)
 {
-	struct mtk_vcodec_dev *dev;
 	struct temp_job *new_job = kmalloc(sizeof(struct temp_job), GFP_KERNEL);
 
 	if (new_job == 0)
 		return 0;
-
-	dev = ctx->dev;
-	if (dev == 0) {
-		if (new_job != 0)
-			kfree(new_job);
-		return 0;
-	}
 
 	new_job->ctx_id = ctx->id;
 	new_job->format = ctx->q_data[MTK_Q_DATA_DST].fmt->fourcc;
@@ -120,7 +103,6 @@ struct temp_job *new_job_from_info(struct mtk_vcodec_ctx *ctx, int core_id)
 	new_job->operation_rate = 0;
 	new_job->submit = 0; /* use now - to be filled */
 	new_job->kcy = 0; /* retrieve hw counter - to be filled */
-	new_job->cur_inst_cnt = dev->enc_cnt;
 	new_job->next = 0;
 	return new_job;
 }
@@ -181,12 +163,6 @@ void mtk_venc_init_ctx_pm(struct mtk_vcodec_ctx *ctx)
 	ctx->sram_data.type = TP_BUFFER;
 	ctx->sram_data.size = 0;
 	ctx->sram_data.flag = FG_POWER;
-
-	if (slbc_request(&ctx->sram_data) >= 0)
-		ctx->use_slbc = 1;
-	else
-		ctx->use_slbc = 0;
-	pr_debug("slbc_request %d, %p\n", &ctx->sram_data, ctx->use_slbc);
 #endif
 }
 
@@ -207,7 +183,7 @@ int mtk_vcodec_init_enc_pm(struct mtk_vcodec_dev *mtkdev)
 	dev = &pdev->dev;
 
 	pm->chip_node = of_find_compatible_node(NULL,
-		NULL, "mediatek,mt6885-vcodec-enc");
+		NULL, "mediatek,mt6873-vcodec-enc");
 	node = of_parse_phandle(dev->of_node, "mediatek,larb", 0);
 	if (!node) {
 		mtk_v4l2_err("no mediatek,larb found");
@@ -229,11 +205,6 @@ int mtk_vcodec_init_enc_pm(struct mtk_vcodec_dev *mtkdev)
 		ret = PTR_ERR(pm->clk_MT_CG_VENC0);
 	}
 
-	pm->clk_MT_CG_VENC1 = devm_clk_get(&pdev->dev, "MT_CG_VENC1");
-	if (IS_ERR(pm->clk_MT_CG_VENC1)) {
-		mtk_v4l2_err("[VCODEC][ERROR] Unable to devm_clk_get MT_CG_VENC1\n");
-		ret = PTR_ERR(pm->clk_MT_CG_VENC1);
-	}
 #endif
 	ion_venc_client = NULL;
 
@@ -249,12 +220,6 @@ void mtk_vcodec_release_enc_pm(struct mtk_vcodec_dev *mtkdev)
 
 void mtk_venc_deinit_ctx_pm(struct mtk_vcodec_ctx *ctx)
 {
-#ifdef CONFIG_MTK_SLBC
-	if (ctx->use_slbc == 1) {
-		pr_debug("slbc_release, %p\n", &ctx->sram_data);
-		slbc_release(&ctx->sram_data);
-	}
-#endif
 }
 
 void mtk_vcodec_enc_clock_on(struct mtk_vcodec_ctx *ctx, int core_id)
@@ -268,15 +233,9 @@ void mtk_vcodec_enc_clock_on(struct mtk_vcodec_ctx *ctx, int core_id)
 
 #ifndef FPGA_PWRCLK_API_DISABLE
 	time_check_start(MTK_FMT_ENC, core_id);
-	if (core_id == MTK_VENC_CORE_0 ||
-		core_id == MTK_VENC_CORE_1) {
+	if (core_id == MTK_VENC_CORE_0) {
 		smi_bus_prepare_enable(SMI_LARB7, "VENC0");
 		ret = clk_prepare_enable(pm->clk_MT_CG_VENC0);
-		if (ret)
-			mtk_v4l2_err("clk_prepare_enable CG_VENC fail %d", ret);
-
-		smi_bus_prepare_enable(SMI_LARB8, "VENC1");
-		ret = clk_prepare_enable(pm->clk_MT_CG_VENC1);
 		if (ret)
 			mtk_v4l2_err("clk_prepare_enable CG_VENC fail %d", ret);
 	} else {
@@ -286,44 +245,24 @@ void mtk_vcodec_enc_clock_on(struct mtk_vcodec_ctx *ctx, int core_id)
 	}
 	time_check_end(MTK_FMT_ENC, core_id, 50);
 #endif
-#ifdef CONFIG_MTK_SLBC
-	if (ctx->use_slbc == 1) {
-		time_check_start(MTK_FMT_ENC, core_id);
-		ret = slbc_power_on(&ctx->sram_data);
-		time_check_end(MTK_FMT_ENC, core_id, 50);
-	}
-#endif
+
 
 #ifdef CONFIG_MTK_PSEUDO_M4U
 	time_check_start(MTK_FMT_ENC, core_id);
 	if (core_id == MTK_VENC_CORE_0) {
 		larb_port_num = SMI_LARB7_PORT_NUM;
 		larb_id = 7;
-	} else if (core_id == MTK_VENC_CORE_1) {
-		larb_port_num = SMI_LARB8_PORT_NUM;
-		larb_id = 8;
 	}
 
-	//enable 34bits port configs & sram settings
+	//enable 34bits port configs
 	for (i = 0; i < larb_port_num; i++) {
-		if (i == 5 || i == 6 || i == 13 ||
-			i == 14 || i == 21 || i == 22) {
-#if IS_ENABLED(CONFIG_MTK_SMI_EXT)
-			ret = smi_sysram_enable(MTK_M4U_ID(larb_id, i), true, "LARB_VENC");
-			if (ret)
-				mtk_v4l2_err("%#x is not ready err: %#x\n", i, ret);
-#else
-			smi_sysram_enable(MTK_M4U_ID(larb_id, i), true, "LARB_VENC");
-#endif
-		} else {
-			port.ePortID = MTK_M4U_ID(larb_id, i);
-			port.Direction = 0;
-			port.Distance = 1;
-			port.domain = 0;
-			port.Security = 0;
-			port.Virtuality = 1;
-			m4u_config_port(&port);
-		}
+		port.ePortID = MTK_M4U_ID(larb_id, i);
+		port.Direction = 0;
+		port.Distance = 1;
+		port.domain = 0;
+		port.Security = 0;
+		port.Virtuality = 1;
+		m4u_config_port(&port);
 	}
 	time_check_end(MTK_FMT_ENC, core_id, 50);
 #endif
@@ -334,19 +273,11 @@ void mtk_vcodec_enc_clock_off(struct mtk_vcodec_ctx *ctx, int core_id)
 {
 	struct mtk_vcodec_pm *pm = &ctx->dev->pm;
 
-#ifdef CONFIG_MTK_SLBC
-	if (ctx->use_slbc == 1)
-		slbc_power_off(&ctx->sram_data);
-#endif
-
 #ifndef FPGA_PWRCLK_API_DISABLE
-	if (core_id == MTK_VENC_CORE_0 ||
-		core_id == MTK_VENC_CORE_1) {
+	if (core_id == MTK_VENC_CORE_0) {
 		clk_disable_unprepare(pm->clk_MT_CG_VENC0);
 		smi_bus_disable_unprepare(SMI_LARB7, "VENC0");
 
-		clk_disable_unprepare(pm->clk_MT_CG_VENC1);
-		smi_bus_disable_unprepare(SMI_LARB8, "VENC1");
 	} else
 		mtk_v4l2_err("invalid core_id %d", core_id);
 
@@ -358,7 +289,6 @@ void mtk_prepare_venc_dvfs(void)
 {
 #if ENC_DVFS
 	int ret;
-	int i;
 
 	mtk_pm_qos_add_request(&venc_qos_req_f, PM_QOS_VENC_FREQ,
 				PM_QOS_DEFAULT_VALUE);
@@ -368,8 +298,7 @@ void mtk_prepare_venc_dvfs(void)
 	if (ret < 0)
 		pr_debug("Failed to get venc freq steps (%d)\n", ret);
 
-	for (i = 0; i < CORE_NUM; i++)
-		temp_venc_jobs[i] = 0;
+	temp_venc_jobs = 0;
 #endif
 }
 
@@ -389,85 +318,36 @@ void mtk_unprepare_venc_dvfs(void)
 void mtk_prepare_venc_emi_bw(void)
 {
 #if ENC_EMI_BW
-	plist_head_init(&venc_rlist[0]);
-	mm_qos_add_request(&venc_rlist[0], &venc_rcpu[0],
-		M4U_PORT_L7_VENC_RCPU_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_rec[0],
-		M4U_PORT_L7_VENC_REC_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_bsdma[0],
-		M4U_PORT_L7_VENC_BSDMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_sub_w_luma[0],
-		M4U_PORT_L7_VENC_SUB_W_LUMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_sv_comv[0],
-		M4U_PORT_L7_VENC_SV_COMV_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_rd_comv[0],
-		M4U_PORT_L7_VENC_RD_COMV_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_nbm_rdma[0],
-		M4U_PORT_L7_VENC_NBM_RDMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_nbm_rdma_lite[0],
-		M4U_PORT_L7_VENC_NBM_RDMA_LITE_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_fcs_nbm_rdma[0],
-		M4U_PORT_L7_VENC_FCS_NBM_RDMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_nbm_wdma[0],
-		M4U_PORT_L7_VENC_NBM_WDMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_nbm_wdma_lite[0],
-		M4U_PORT_L7_VENC_NBM_WDMA_LITE_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_fcs_nbm_wdma[0],
-		M4U_PORT_L7_VENC_FCS_NBM_WDMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_sub_r_luma[0],
-		M4U_PORT_L7_VENC_SUB_R_LUMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_cur_luma[0],
-		M4U_PORT_L7_VENC_CUR_LUMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_cur_chroma[0],
-		M4U_PORT_L7_VENC_CUR_CHROMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_ref_luma[0],
-		M4U_PORT_L7_VENC_REF_LUMA_DISP);
-	mm_qos_add_request(&venc_rlist[0], &venc_ref_chroma[0],
-		M4U_PORT_L7_VENC_REF_CHROMA_DISP);
-
-	plist_head_init(&venc_rlist[1]);
-	mm_qos_add_request(&venc_rlist[1], &venc_rcpu[1],
-		M4U_PORT_L8_VENC_RCPU_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_rec[1],
-		M4U_PORT_L8_VENC_REC_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_bsdma[1],
-		M4U_PORT_L8_VENC_BSDMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_sub_w_luma[1],
-		M4U_PORT_L8_VENC_SUB_W_LUMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_sv_comv[1],
-		M4U_PORT_L8_VENC_SV_COMV_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_rd_comv[1],
-		M4U_PORT_L8_VENC_RD_COMV_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_nbm_rdma[1],
-		M4U_PORT_L8_VENC_NBM_RDMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_nbm_rdma_lite[1],
-		M4U_PORT_L8_VENC_NBM_RDMA_LITE_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_fcs_nbm_rdma[1],
-		M4U_PORT_L8_VENC_FCS_NBM_RDMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_nbm_wdma[1],
-		M4U_PORT_L8_VENC_NBM_WDMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_nbm_wdma_lite[1],
-		M4U_PORT_L8_VENC_NBM_WDMA_LITE_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_fcs_nbm_wdma[1],
-		M4U_PORT_L8_VENC_FCS_NBM_WDMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_sub_r_luma[1],
-		M4U_PORT_L8_VENC_SUB_R_LUMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_cur_luma[1],
-		M4U_PORT_L8_VENC_CUR_LUMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_cur_chroma[1],
-		M4U_PORT_L8_VENC_CUR_CHROMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_ref_luma[1],
-		M4U_PORT_L8_VENC_REF_LUMA_MDP);
-	mm_qos_add_request(&venc_rlist[1], &venc_ref_chroma[1],
-		M4U_PORT_L8_VENC_REF_CHROMA_MDP);
+	plist_head_init(&venc_rlist);
+	mm_qos_add_request(&venc_rlist, &venc_rcpu,
+		M4U_PORT_L7_VENC_RCPU);
+	mm_qos_add_request(&venc_rlist, &venc_rec,
+		M4U_PORT_L7_VENC_REC);
+	mm_qos_add_request(&venc_rlist, &venc_bsdma,
+		M4U_PORT_L7_VENC_BSDMA);
+	mm_qos_add_request(&venc_rlist, &venc_sv_comv,
+		M4U_PORT_L7_VENC_SV_COMV);
+	mm_qos_add_request(&venc_rlist, &venc_rd_comv,
+		M4U_PORT_L7_VENC_RD_COMV);
+	mm_qos_add_request(&venc_rlist, &venc_cur_luma,
+		M4U_PORT_L7_VENC_CUR_LUMA);
+	mm_qos_add_request(&venc_rlist, &venc_cur_chroma,
+		M4U_PORT_L7_VENC_CUR_CHROMA);
+	mm_qos_add_request(&venc_rlist, &venc_ref_luma,
+		M4U_PORT_L7_VENC_REF_LUMA);
+	mm_qos_add_request(&venc_rlist, &venc_ref_chroma,
+		M4U_PORT_L7_VENC_REF_CHROMA);
+	mm_qos_add_request(&venc_rlist, &venc_sub_r_luma,
+		M4U_PORT_L7_VENC_SUB_R_LUMA);
+	mm_qos_add_request(&venc_rlist, &venc_sub_w_luma,
+		M4U_PORT_L7_VENC_SUB_W_LUMA);
 #endif
 }
 
 void mtk_unprepare_venc_emi_bw(void)
 {
 #if ENC_EMI_BW
-	mm_qos_remove_all_request(&venc_rlist[0]);
-	mm_qos_remove_all_request(&venc_rlist[1]);
+	mm_qos_remove_all_request(&venc_rlist);
 #endif
 }
 
@@ -512,47 +392,23 @@ void mtk_venc_dvfs_begin(struct temp_job **job_list)
 
 	area = job->visible_width * job->visible_height;
 
-	if (area >= 3840 * 2160) {
+	if (area >= 3840 * 2160)
+		idx = 2;
+	else if (area >= 1920 * 1080)
 		if (job->operation_rate > 30)
 			idx = 2;
 		else
 			idx = 0;
-	} else if (area >= 1920 * 1080) {
-		if (job->operation_rate > 30) {
-			if (job->format == V4L2_PIX_FMT_H265)
-				idx = 1;
-			else /* H.264 */
-				idx = 2;
-		} else {
-			if (job->bitratemode == 1) /* CBR */
-				idx = 1;
-			else
-				idx = 0;
-		}
-		#ifdef OPLUS_FEATURE_CAMERA_COMMON
+	else
 		idx = 0;
-		#endif/*OPLUS_FEATURE_CAMERA_COMMON*/
-	} else {
-		idx = 0;
-	}
 
-	if (job->operation_rate > 240 ||
-		(area >= 1920 * 1080 && job->operation_rate == 240) ||
-		job->cur_inst_cnt > 2)
+	if (job->operation_rate >= 120)
 		idx = 2;
-	else if (job->operation_rate >= 120)
-		idx = 0;
 
 	if (job->format == V4L2_PIX_FMT_HEIF)
 		idx = 3;
 
-	mtk_v4l2_debug(2, "[Debug] freq idx %d (%d, %d, %d)",
-		idx, area, job->operation_rate, job->bitratemode);
-
-	venc_req_freq[job->module] = venc_freq_map[idx];
-	venc_freq = venc_req_freq[0];
-	if (venc_freq < venc_req_freq[1])
-		venc_freq = venc_req_freq[1];
+	venc_freq = venc_freq_map[idx];
 
 	mtk_pm_qos_update_request(&venc_qos_req_f, venc_freq);
 #endif
@@ -586,18 +442,15 @@ void mtk_venc_dvfs_end(struct temp_job *job)
 	}
 
 	freq_idx = (venc_freq_step_size == 0) ? 0 : (venc_freq_step_size - 1);
-	mtk_pm_qos_update_request(&venc_qos_req_f, venc_freq_steps[freq_idx]);
+	pm_qos_update_request(&venc_qos_req_f, venc_freq_steps[freq_idx]);
 	mutex_unlock(&ctx->dev->enc_dvfs_mutex);
 #endif
 #if ENC_DVFS
 	if (job == 0)
 		return;
 
-	venc_req_freq[job->module] = 0;
 
-	venc_freq = venc_req_freq[0];
-	if (venc_freq < venc_req_freq[1])
-		venc_freq = venc_req_freq[1];
+	venc_freq = venc_freq_map[0];
 
 	mtk_pm_qos_update_request(&venc_qos_req_f, venc_freq);
 #endif
@@ -655,16 +508,6 @@ void mtk_venc_emi_bw_begin(struct temp_job **jobs)
 	int ref_luma_bw = 0;
 	int ref_chroma_bw = 0;
 
-	/* New Ports */
-	int sub_w_luma_bw = 0;
-	int nbm_rdma_bw = 0;
-	int nbm_rdma_lite_bw = 0;
-	int fcs_nbm_rdma_bw = 0;
-	int nbm_wdma_bw = 0;
-	int nbm_wdma_lite_bw = 0;
-	int fcs_nbm_wdma_bw = 0;
-	int sub_r_luma_bw = 0;
-
 	if (*jobs == 0)
 		return;
 
@@ -695,32 +538,18 @@ void mtk_venc_emi_bw_begin(struct temp_job **jobs)
 		ref_chroma_bw = (cur_luma_bw * 1) + (cur_chroma_bw * 1);
 	}
 
-	mm_qos_set_request(&venc_rcpu[id], rcpu_bw, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_rec[id], rec_bw, 0, BW_COMP_VENC);
-	mm_qos_set_request(&venc_bsdma[id], bsdma_bw, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_sub_w_luma[id], sub_w_luma_bw, 0,
-						BW_COMP_NONE);
-	mm_qos_set_request(&venc_sv_comv[id], sv_comv_bw, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_rd_comv[id], rd_comv_bw, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_rdma[id], nbm_rdma_bw, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_rdma_lite[id], nbm_rdma_lite_bw, 0,
-						BW_COMP_NONE);
-	mm_qos_set_request(&venc_fcs_nbm_rdma[id], fcs_nbm_rdma_bw, 0,
-						BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_wdma[id], nbm_wdma_bw, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_wdma_lite[id], nbm_wdma_lite_bw, 0,
-						BW_COMP_NONE);
-	mm_qos_set_request(&venc_fcs_nbm_wdma[id], fcs_nbm_wdma_bw, 0,
-						BW_COMP_NONE);
-	mm_qos_set_request(&venc_sub_r_luma[id], sub_r_luma_bw, 0,
-						BW_COMP_NONE);
-	mm_qos_set_request(&venc_cur_luma[id], cur_luma_bw, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_cur_chroma[id], cur_chroma_bw, 0,
-						BW_COMP_NONE);
-	mm_qos_set_request(&venc_ref_luma[id], ref_luma_bw, 0, BW_COMP_VENC);
-	mm_qos_set_request(&venc_ref_chroma[id], ref_chroma_bw, 0,
-						BW_COMP_VENC);
-	mm_qos_update_all_request(&venc_rlist[id]);
+	mm_qos_set_request(&venc_rcpu, rcpu_bw, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_rec, rec_bw, 0, BW_COMP_VENC);
+	mm_qos_set_request(&venc_bsdma, bsdma_bw, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_sv_comv, sv_comv_bw, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_rd_comv, rd_comv_bw, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_cur_luma, cur_luma_bw, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_cur_chroma, cur_chroma_bw, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_ref_luma, ref_luma_bw, 0, BW_COMP_VENC);
+	mm_qos_set_request(&venc_ref_chroma, ref_chroma_bw, 0, BW_COMP_VENC);
+	mm_qos_set_request(&venc_sub_r_luma, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_sub_w_luma, 0, 0, BW_COMP_NONE);
+	mm_qos_update_all_request(&venc_rlist);
 #endif
 }
 
@@ -734,24 +563,18 @@ void mtk_venc_emi_bw_end(struct temp_job *job)
 
 	core_id = job->module;
 
-	mm_qos_set_request(&venc_rcpu[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_rec[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_bsdma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_sub_w_luma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_sv_comv[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_rd_comv[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_rdma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_rdma_lite[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_fcs_nbm_rdma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_wdma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_nbm_wdma_lite[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_fcs_nbm_wdma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_sub_r_luma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_cur_luma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_cur_chroma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_ref_luma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_set_request(&venc_ref_chroma[core_id], 0, 0, BW_COMP_NONE);
-	mm_qos_update_all_request(&venc_rlist[core_id]);
+	mm_qos_set_request(&venc_rcpu, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_rec, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_bsdma, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_sv_comv, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_rd_comv, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_cur_luma, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_cur_chroma, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_ref_luma, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_ref_chroma, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_sub_r_luma, 0, 0, BW_COMP_NONE);
+	mm_qos_set_request(&venc_sub_w_luma, 0, 0, BW_COMP_NONE);
+	mm_qos_update_all_request(&venc_rlist);
 #endif
 }
 
@@ -774,7 +597,7 @@ struct temp_job *mtk_venc_queue_job(struct mtk_vcodec_ctx *ctx, int core_id,
 	struct temp_job *job = new_job_from_info(ctx, core_id);
 
 	if (job != 0)
-		cnt = add_to_tail(&temp_venc_jobs[core_id], job);
+		cnt = add_to_tail(&temp_venc_jobs, job);
 
 	return job;
 }
@@ -782,7 +605,7 @@ struct temp_job *mtk_venc_queue_job(struct mtk_vcodec_ctx *ctx, int core_id,
 struct temp_job *mtk_venc_dequeue_job(struct mtk_vcodec_ctx *ctx, int core_id,
 				int job_cnt)
 {
-	struct temp_job *job = remove_from_head(&temp_venc_jobs[core_id]);
+	struct temp_job *job = remove_from_head(&temp_venc_jobs);
 
 	if (job != 0)
 		return job;
@@ -807,16 +630,13 @@ void mtk_venc_pmqos_gce_flush(struct mtk_vcodec_ctx *ctx, int core_id,
 		frame_rate = ctx->enc_params.framerate_num /
 				ctx->enc_params.framerate_denom;
 	}
-
-	if (job != NULL) {
+	if (job != NULL)
 		job->operation_rate = frame_rate;
-		job->bitratemode = ctx->enc_params.bitratemode;
-	}
 
 	if (job_cnt == 0) {
 		// Adjust dvfs immediately
-		mtk_venc_dvfs_begin(&temp_venc_jobs[core_id]);
-		mtk_venc_emi_bw_begin(&temp_venc_jobs[core_id]);
+		mtk_venc_dvfs_begin(&temp_venc_jobs);
+		mtk_venc_emi_bw_begin(&temp_venc_jobs);
 	}
 	/* mutex_unlock(&ctx->dev_enc_dvfs_mutex); */
 }
@@ -832,8 +652,8 @@ void mtk_venc_pmqos_gce_done(struct mtk_vcodec_ctx *ctx, int core_id,
 	free_job(job);
 
 	if (job_cnt > 1) {
-		mtk_venc_dvfs_begin(&temp_venc_jobs[core_id]);
-		mtk_venc_emi_bw_begin(&temp_venc_jobs[core_id]);
+		mtk_venc_dvfs_begin(&temp_venc_jobs);
+		mtk_venc_emi_bw_begin(&temp_venc_jobs);
 	}
 }
 

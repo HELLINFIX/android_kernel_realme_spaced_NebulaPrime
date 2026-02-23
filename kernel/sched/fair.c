@@ -65,8 +65,8 @@ extern unsigned int walt_ravg_window;
  *
  * (default: 6ms * (1 + ilog(ncpus)), units: nanoseconds)
  */
-unsigned int sysctl_sched_latency			= 6000000ULL;
-unsigned int normalized_sysctl_sched_latency		= 6000000ULL;
+unsigned int sysctl_sched_latency			= 8000000ULL;
+unsigned int normalized_sysctl_sched_latency		= 8000000ULL;
 
 /*
  * Enable/disable honoring sync flag in energy-aware wakeups.
@@ -96,8 +96,8 @@ enum sched_tunable_scaling sysctl_sched_tunable_scaling = SCHED_TUNABLESCALING_L
  *
  * (default: 0.75 msec * (1 + ilog(ncpus)), units: nanoseconds)
  */
-unsigned int sysctl_sched_min_granularity		= 750000ULL;
-unsigned int normalized_sysctl_sched_min_granularity	= 750000ULL;
+unsigned int sysctl_sched_min_granularity		= 600000ULL;
+unsigned int normalized_sysctl_sched_min_granularity	= 600000ULL;
 
 /*
  * This value is kept at sysctl_sched_latency/sysctl_sched_min_granularity
@@ -119,10 +119,10 @@ unsigned int sysctl_sched_child_runs_first __read_mostly;
  *
  * (default: 1 msec * (1 + ilog(ncpus)), units: nanoseconds)
  */
-unsigned int sysctl_sched_wakeup_granularity		= 1000000UL;
-unsigned int normalized_sysctl_sched_wakeup_granularity	= 1000000UL;
+unsigned int sysctl_sched_wakeup_granularity		= 700000UL;
+unsigned int normalized_sysctl_sched_wakeup_granularity	= 700000UL;
 
-unsigned int __read_mostly sysctl_sched_migration_cost	= 1000000UL;
+unsigned int __read_mostly sysctl_sched_migration_cost	= 900000UL;
 
 #ifdef CONFIG_SCHED_WALT
 #ifdef OPLUS_FEATURE_SCHED_ASSIST

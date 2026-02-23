@@ -172,7 +172,7 @@ struct scan_control {
 /*
  * From 0 .. 200.  Higher means more swappy.
  */
-int vm_swappiness = 60;
+int vm_swappiness = 100;
 
 #ifdef CONFIG_DYNAMIC_TUNNING_SWAPPINESS
 int vm_swappiness_threshold1 = 0;
@@ -1651,7 +1651,7 @@ unsigned long nswap_reclaim_page_list(struct list_head *page_list,
  */
 int __isolate_lru_page(struct page *page, isolate_mode_t mode)
 {
-	int ret = -EBUSY;
+	int ret = -EINVAL;
 
 	/* Only take pages on the LRU. */
 	if (!PageLRU(page))
@@ -1660,6 +1660,8 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
 	/* Compaction should not handle unevictable pages but CMA can do so */
 	if (PageUnevictable(page) && !(mode & ISOLATE_UNEVICTABLE))
 		return ret;
+
+	ret = -EBUSY;
 
 	/*
 	 * To minimise LRU disruption, the caller can indicate that it only
@@ -1707,10 +1709,8 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
 		 * sure the page is not being freed elsewhere -- the
 		 * page release code relies on it.
 		 */
-		if (TestClearPageLRU(page))
-			ret = 0;
-		else
-			put_page(page);
+		ClearPageLRU(page);
+		ret = 0;
 	}
 
 	return ret;
@@ -1776,6 +1776,8 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 
 		page = lru_to_page(src);
 		prefetchw_prev_lru_page(page, src, flags);
+
+		VM_BUG_ON_PAGE(!PageLRU(page), page);
 
 		if (page_zonenum(page) > sc->reclaim_idx) {
 			list_move(&page->lru, &pages_skipped);
@@ -1867,19 +1869,20 @@ int isolate_lru_page(struct page *page)
 	VM_BUG_ON_PAGE(!page_count(page), page);
 	WARN_RATELIMIT(PageTail(page), "trying to isolate tail page");
 
-	if (TestClearPageLRU(page)) {
+	if (PageLRU(page)) {
 		struct zone *zone = page_zone(page);
 		struct lruvec *lruvec;
 
-		get_page(page);
-		lruvec = mem_cgroup_page_lruvec(page, zone->zone_pgdat);
-
 		spin_lock_irq(zone_lru_lock(zone));
-		del_page_from_lru_list(page, lruvec);
+		lruvec = mem_cgroup_page_lruvec(page, zone->zone_pgdat);
+		if (PageLRU(page)) {
+			get_page(page);
+			ClearPageLRU(page);
+			del_page_from_lru_list(page, lruvec);
+			ret = 0;
+		}
 		spin_unlock_irq(zone_lru_lock(zone));
-		ret = 0;
 	}
-
 	return ret;
 }
 
@@ -2780,7 +2783,7 @@ static int get_swappiness(struct lruvec *lruvec, struct scan_control *sc)
 {
 	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
 
-	if (mem_cgroup_get_nr_swap_pages(memcg) <= 0)
+	if (mem_cgroup_get_nr_swap_pages(memcg) < MIN_LRU_BATCH)
 		return 0;
 
 	return mem_cgroup_swappiness(memcg);
@@ -2901,16 +2904,13 @@ void lru_gen_migrate_mm(struct mm_struct *mm)
 	if (mem_cgroup_disabled())
 		return;
 
-	/* migration can happen before addition */
-	if (!mm->lru_gen.memcg)
-		return;
-
 	rcu_read_lock();
 	memcg = mem_cgroup_from_task(mm->owner);
 	rcu_read_unlock();
 	if (memcg == mm->lru_gen.memcg)
 		return;
 
+	VM_BUG_ON_MM(!mm->lru_gen.memcg, mm);
 	VM_BUG_ON_MM(list_empty(&mm->lru_gen.list), mm);
 
 	lru_gen_del_mm(mm);
@@ -4327,10 +4327,7 @@ static bool isolate_page(struct lruvec *lruvec, struct page *page, struct scan_c
 	if (!get_page_unless_zero(page))
 		return false;
 
-	if (!TestClearPageLRU(page)) {
-		put_page(page);
-		return false;
-	}
+	ClearPageLRU(page);
 
 	success = lru_gen_del_page(lruvec, page, true);
 	VM_BUG_ON_PAGE(!success, page);
@@ -7118,11 +7115,6 @@ void check_move_unevictable_pages(struct page **pages, int nr_pages)
 		struct pglist_data *pagepgdat = page_pgdat(page);
 
 		pgscanned++;
-
-		/* block memcg migration during page moving between lru */
-		if (!TestClearPageLRU(page))
-			continue;
-
 		if (pagepgdat != pgdat) {
 			if (pgdat)
 				spin_unlock_irq(&pgdat->lru_lock);
@@ -7131,21 +7123,21 @@ void check_move_unevictable_pages(struct page **pages, int nr_pages)
 		}
 		lruvec = mem_cgroup_page_lruvec(page, pgdat);
 
-		if (page_evictable(page) && PageUnevictable(page)) {
+		if (!PageLRU(page) || !PageUnevictable(page))
+			continue;
+
+		if (page_evictable(page)) {
 			del_page_from_lru_list(page, lruvec);
 			ClearPageUnevictable(page);
 			add_page_to_lru_list(page, lruvec);
 			pgrescued++;
 		}
-		SetPageLRU(page);
 	}
 
 	if (pgdat) {
 		__count_vm_events(UNEVICTABLE_PGRESCUED, pgrescued);
 		__count_vm_events(UNEVICTABLE_PGSCANNED, pgscanned);
 		spin_unlock_irq(&pgdat->lru_lock);
-	} else if (pgscanned) {
-		count_vm_events(UNEVICTABLE_PGSCANNED, pgscanned);
 	}
 }
 #endif /* CONFIG_SHMEM */

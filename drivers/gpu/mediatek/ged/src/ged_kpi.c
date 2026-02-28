@@ -54,7 +54,9 @@ int (*ged_kpi_PushAppSelfFcFp_fbt)(int is_game_control_frame_rate, pid_t pid);
 EXPORT_SYMBOL(ged_kpi_PushAppSelfFcFp_fbt);
 
 #ifdef MTK_GED_KPI
-
+#ifdef GED_TAG
+#undef GED_TAG
+#endif
 #define GED_TAG "[GED_KPI]"
 #define GED_PR_DEBUG(fmt, args...)\
 	pr_debug(GED_TAG"%s %d : "fmt, __func__, __LINE__, ##args)

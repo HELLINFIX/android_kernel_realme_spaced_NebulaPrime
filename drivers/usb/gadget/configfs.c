@@ -153,9 +153,12 @@ static int usb_string_copy(const char *s, char **s_copy)
 	int ret;
 	char *str;
 	char *copy = *s_copy;
+
 	ret = strlen(s);
 	if (ret > USB_MAX_STRING_LEN)
 		return -EOVERFLOW;
+	if (ret < 1)
+		return -EINVAL;
 
 	if (copy) {
 		str = copy;
@@ -1681,7 +1684,7 @@ static int android_setup(struct usb_gadget *gadget,
 
 #ifdef CONFIG_USB_CONFIGFS_F_ACC
 	if (value < 0)
- 		value = acc_ctrlrequest_composite(cdev, c);
+		value = acc_ctrlrequest_composite(cdev, c);
 #endif
 
 	if (value < 0)

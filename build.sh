@@ -1,80 +1,142 @@
-#!/bin/env bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Define compile function
-function compile() {
-  # Load environment variables
-  source ~/.bashrc
-  source ~/.profile
+# ===== VARIABLES =====
 
-  # Set environment variables
-  export LC_ALL=C
-  export USE_CCACHE=1
+DEFCONFIG=spaced_defconfig
+KERNEL_NAME=Nebula
+CLANG_DIR=clang
+OUT=out
+THREADS=$(nproc --all)
+DATE=$(date +"%Y%m%d-%H")
+IMAGE=$OUT/arch/arm64/boot/Image.gz-dtb
 
-  TANGGAL=$(date +"%Y%m%d-%H")
-  export ARCH=arm64
-  export KBUILD_BUILD_HOST=Nebula
-  export KBUILD_BUILD_USER="HELLINFIX"
+export ARCH=arm64
+export LC_ALL=C
+export USE_CCACHE=1
+export KBUILD_BUILD_HOST=Nebula
+export KBUILD_BUILD_USER=HELLINFIX
 
-  # Allocate 100GB of memory to ccache
-  ccache -M 100G
+# ===== TOOLCHAIN =====
 
-  # Install Kernel Dependencies
-  sudo apt update
-  sudo apt install -y libelf-dev libarchive-tools zstd flex bc ccache
+setup_clang() {
 
-  # Download clang if not present
-  if [[ ! -d "clang" ]]; then mkdir clang && cd clang
-  bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) -S
-  bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) --patch=glibc
-  ls
-  cd ..
-  fi
+if [[ ! -x "$CLANG_DIR/bin/clang" ]]; then
+    echo "[*] Fetching clang toolchain..."
 
-  # create output directory and do a clean or dirty build
-  read -p "Wanna do dirty build? (Y/N): " build_type
-  if [[ $build_type == "N" || $build_type == "n" ]]; then
-  echo Deleting out directory and doing clean Build
-  rm -rf out && mkdir -p out
-  fi
-  if [[ $build_type == "Y" || $build_type == "y" ]]; then
-  echo Warning :- Doing dirty build
-  fi
-  if ! [[ $build_type == "Y" || $build_type == "y" ]]; then
-  if ! [[ $build_type == "N" || $build_type == "n" ]]; then
-  echo Invalid Input , Read carefully before typing
-  echo Trying to restart script
-  . build.sh && exit
-  fi
-  fi
+    git clone --depth=1 https://gitlab.com/HELLINFIX/aosp-clang-17.0.0.git "$CLANG_DIR"
 
-  # Build the kernel
-  make -j$(nproc --all) O=out ARCH=arm64 spaced_defconfig
-
-  # Add clang bin directory to PATH
-  PATH="${PWD}/clang/bin:${PATH}"
-
-  # Build the kernel with clang and log output
-  make -j$(nproc --all) O=out CC="clang" LLVM=1 CONFIG_NO_ERROR_ON_MISMATCH=y 2>&1 | tee build.log
-}
-
-function zupload()
-{
-zimage=out/arch/arm64/boot/Image.gz-dtb
-if ! [ -a $zimage ];
-then
-echo  " Failed to compile zImage, fix the errors first "
-else
-echo -e " Build succesful, generating flashable zip now "
-rm -rf AnyKernel
-git clone --depth=1 https://github.com/HELLINFIX/AnyKernel3 AnyKernel
-cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
-cd AnyKernel
-zip -r9 Nebula-${TANGGAL}.zip *
-curl -L bashupload.com -T Nebula-${TANGGAL}.zip
-cd ../
+    pushd "$CLANG_DIR" >/dev/null
+    bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) --patch=glibc
+    popd >/dev/null
 fi
+
+export PATH="$PWD/$CLANG_DIR/bin:$PATH"
+
 }
 
-# Run functions
-compile
-zupload
+# ===== CCACHE =====
+
+setup_ccache() {
+
+if command -v ccache >/dev/null; then
+    echo "[*] Setting up ccache"
+
+    export CC="ccache clang"
+    export CXX="ccache clang++"
+
+    ccache -M 100G
+    ccache -z
+else
+    echo "[!] ccache not found"
+fi
+
+}
+
+# ===== CLEAN BUILD OPTION =====
+
+prepare_out() {
+
+read -rp "Dirty build? (y/n): " build_type
+
+case "$build_type" in
+n|N)
+    echo "[*] Performing clean build"
+    rm -rf "$OUT"
+    ;;
+y|Y)
+    echo "[*] Performing dirty build"
+    ;;
+*)
+    echo "[!] Invalid input"
+    exit 1
+    ;;
+esac
+
+mkdir -p "$OUT"
+
+}
+
+# ===== BUILD =====
+
+build_kernel() {
+
+echo "[*] Starting kernel compilation..."
+
+make -j"$THREADS" \
+O="$OUT" \
+ARCH=arm64 \
+"$DEFCONFIG"
+
+make -j"$THREADS" \
+O="$OUT" \
+LLVM=1 \
+LLVM_IAS=1 \
+CC=clang \
+CONFIG_NO_ERROR_ON_MISMATCH=y \
+2>&1 | tee build.log
+
+}
+
+# ===== ZIP =====
+
+make_zip() {
+
+if [[ ! -f "$IMAGE" ]]; then
+    echo "[✗] Kernel image missing — build failed"
+    exit 1
+fi
+
+echo "[✓] Kernel built successfully"
+
+rm -rf AnyKernel
+
+git clone --depth=1 https://github.com/HELLINFIX/AnyKernel3 AnyKernel
+
+cp "$IMAGE" AnyKernel/
+
+pushd AnyKernel >/dev/null
+
+ZIPNAME="${KERNEL_NAME}-${DATE}.zip"
+
+echo "[*] Creating flashable zip"
+
+zip -r9 "$ZIPNAME" . -x "*.git*" "*.github*" "*.md"
+
+echo "[*] Uploading build"
+
+curl -s -F "file=@$ZIPNAME" https://store1.gofile.io/uploadFile
+
+popd >/dev/null
+
+echo "[✓] Build finished"
+
+}
+
+# ===== MAIN =====
+
+setup_clang
+setup_ccache
+prepare_out
+build_kernel
+make_zip

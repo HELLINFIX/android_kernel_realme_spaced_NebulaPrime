@@ -197,7 +197,7 @@
 			enable-method = "psci";
 			clock-frequency = <2000000000>;
 			operating-points-v2 = <&cluster0_opp>;
-			dynamic-power-coefficient = <85>;
+			dynamic-power-coefficient = <70>;
 			capacity-dmips-mhz = <427>;
 			cpu-idle-states = <&cpuoff_l &clusteroff_l
 						&mcusysoff &s2idle>;
@@ -210,7 +210,7 @@
 			enable-method = "psci";
 			clock-frequency = <2000000000>;
 			operating-points-v2 = <&cluster0_opp>;
-			dynamic-power-coefficient = <85>;
+			dynamic-power-coefficient = <70>;
 			capacity-dmips-mhz = <427>;
 			cpu-idle-states = <&cpuoff_l &clusteroff_l
 						&mcusysoff &s2idle>;
@@ -223,7 +223,7 @@
 			enable-method = "psci";
 			clock-frequency = <2000000000>;
 			operating-points-v2 = <&cluster0_opp>;
-			dynamic-power-coefficient = <85>;
+			dynamic-power-coefficient = <70>;
 			capacity-dmips-mhz = <427>;
 			cpu-idle-states = <&cpuoff_l &clusteroff_l
 						&mcusysoff &s2idle>;
@@ -236,7 +236,7 @@
 			enable-method = "psci";
 			clock-frequency = <2000000000>;
 			operating-points-v2 = <&cluster0_opp>;
-			dynamic-power-coefficient = <85>;
+			dynamic-power-coefficient = <70>;
 			capacity-dmips-mhz = <427>;
 			cpu-idle-states = <&cpuoff_l &clusteroff_l
 						&mcusysoff &s2idle>;
@@ -249,7 +249,7 @@
 			enable-method = "psci";
 			clock-frequency = <2000000000>;
 			operating-points-v2 = <&cluster0_opp>;
-			dynamic-power-coefficient = <85>;
+			dynamic-power-coefficient = <70>;
 			capacity-dmips-mhz = <427>;
 			cpu-idle-states = <&cpuoff_l &clusteroff_l
 						&mcusysoff  &s2idle>;
@@ -262,7 +262,7 @@
 			enable-method = "psci";
 			clock-frequency = <2000000000>;
 			operating-points-v2 = <&cluster0_opp>;
-			dynamic-power-coefficient = <85>;
+			dynamic-power-coefficient = <70>;
 			capacity-dmips-mhz = <427>;
 			cpu-idle-states = <&cpuoff_l &clusteroff_l
 						&mcusysoff  &s2idle>;
@@ -275,7 +275,7 @@
 			enable-method = "psci";
 			clock-frequency = <2050000000>;
 			operating-points-v2 = <&cluster1_opp>;
-			dynamic-power-coefficient = <275>;
+			dynamic-power-coefficient = <240>;
 			capacity-dmips-mhz = <1024>;
 			cpu-idle-states = <&cpuoff_b &clusteroff_b
 						&mcusysoff  &s2idle>;
@@ -288,7 +288,7 @@
 			enable-method = "psci";
 			clock-frequency = <2050000000>;
 			operating-points-v2 = <&cluster1_opp>;
-			dynamic-power-coefficient = <275>;
+			dynamic-power-coefficient = <240>;
 			capacity-dmips-mhz = <1024>;
 			cpu-idle-states = <&cpuoff_b &clusteroff_b
 						&mcusysoff &s2idle>;

@@ -337,7 +337,7 @@
 				local-timer-stop;
 				entry-latency-us = <50>;
 				exit-latency-us = <100>;
-				min-residency-us = <1600>;
+				min-residency-us = <800>;
 			};
 			cpuoff_b: cpuoff_b {
 				compatible = "mediatek,idle-state";
@@ -345,7 +345,7 @@
 				local-timer-stop;
 				entry-latency-us = <50>;
 				exit-latency-us = <100>;
-				min-residency-us = <1400>;
+				min-residency-us = <700>;
 			};
 			clusteroff_l: clusteroff_l {
 				compatible = "mediatek,idle-state";
@@ -353,7 +353,7 @@
 				local-timer-stop;
 				entry-latency-us = <100>;
 				exit-latency-us = <250>;
-				min-residency-us = <2100>;
+				min-residency-us = <1500>;
 			};
 			clusteroff_b: clusteroff_b {
 				compatible = "mediatek,idle-state";
@@ -361,7 +361,7 @@
 				local-timer-stop;
 				entry-latency-us = <100>;
 				exit-latency-us = <250>;
-				min-residency-us = <1900>;
+				min-residency-us = <1400>;
 			};
 			mcusysoff: mcusysoff {
 				compatible = "mediatek,idle-state";
@@ -369,7 +369,7 @@
 				local-timer-stop;
 				entry-latency-us = <300>;
 				exit-latency-us = <1200>;
-				min-residency-us = <2600>;
+				min-residency-us = <2200>;
 			};
 			s2idle: s2idle {
 				compatible = "mediatek,idle-state";

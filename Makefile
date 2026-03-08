@@ -742,6 +742,7 @@ KBUILD_CFLAGS   += -Os
 else
 KBUILD_CFLAGS += -O2
 KBUILD_CFLAGS += -march=armv8.2-a+lse+crypto+crc+dotprod
+KBUILD_CFLAGS += -moutline-atomics
 endif
 
 KBUILD_CFLAGS += $(call cc-ifversion, -gt, 0900, \

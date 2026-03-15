@@ -20,11 +20,11 @@ function compile() {
 
   # Install Kernel Dependencies
   sudo apt update
-  sudo apt install -y libelf-dev libarchive-tools zstd flex bc ccache
+  sudo apt install -y libelf-dev libarchive-tools zstd flex bc ccache libc++-dev libc++abi-dev
 
   # Download clang if not present
-  if [[ ! -d "clang" ]]; then mkdir clang && cd clang
-  bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) -S
+  if [[ ! -d "clang" ]]; then git clone https://gitlab.com/HELLINFIX/aosp-clang-17.0.0.git clang
+  cd clang
   bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) --patch=glibc
   ls
   cd ..
@@ -70,7 +70,7 @@ git clone --depth=1 https://github.com/HELLINFIX/AnyKernel3 AnyKernel
 cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
 cd AnyKernel
 zip -r9 Nebula-${TANGGAL}.zip *
-curl -L bashupload.com -T Nebula-${TANGGAL}.zip
+curl -F "file=@Nebula-${TANGGAL}.zip" https://store1.gofile.io/uploadFile
 cd ../
 fi
 }

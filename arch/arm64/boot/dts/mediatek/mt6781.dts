@@ -113,7 +113,7 @@
 		};
 		opp15 {
 			opp-hz = /bits/ 64 <2000000000>;
-			opp-microvolt = <1031250>;
+			opp-microvolt = <1000000>;
 		};
 	};
 
@@ -182,7 +182,7 @@
 		};
 		opp15 {
 			opp-hz = /bits/ 64 <2050000000>;
-			opp-microvolt = <1118750>;
+			opp-microvolt = <1090000>;
 		};
 	};
 

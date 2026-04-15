@@ -150,9 +150,9 @@ static unsigned long zero_ul;
 static unsigned long one_ul = 1;
 static unsigned long long_max = LONG_MAX;
 static int one_hundred = 100;
+static int two_hundred = 200;
 #if defined(OPLUS_FEATURE_ZRAM_OPT) && defined(CONFIG_OPLUS_ZRAM_OPT)
 extern int direct_vm_swappiness;
-static int two_hundred = 200;
 #endif /*OPLUS_FEATURE_ZRAM_OPT*/
 
 static int one_thousand = 1000;

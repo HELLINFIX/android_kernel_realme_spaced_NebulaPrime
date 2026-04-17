@@ -94,19 +94,28 @@ void mls_sid_to_context(struct policydb *p,
 	int i, l, head, prev;
 	struct ebitmap *e;
 	struct ebitmap_node *node;
+	size_t avail, len;
+	ssize_t rc;
 
 	if (!p->mls_enabled)
 		return;
 
+	len = mls_compute_context_len(p, context);
 	scontextp = *scontext;
+	avail = len + 1;
 
 	*scontextp = ':';
 	scontextp++;
+	avail--;
 
 	for (l = 0; l < 2; l++) {
-		strcpy(scontextp, sym_name(p, SYM_LEVELS,
-					   context->range.level[l].sens - 1));
-		scontextp += strlen(scontextp);
+		rc = strscpy(scontextp, sym_name(p, SYM_LEVELS,
+					   context->range.level[l].sens - 1),
+			     avail);
+		if (rc >= 0) {
+			scontextp += rc;
+			avail -= rc;
+		}
 
 		/* categories */
 		head = -2;
@@ -116,47 +125,67 @@ void mls_sid_to_context(struct policydb *p,
 			if (i - prev > 1) {
 				/* one or more negative bits are skipped */
 				if (prev != head) {
-					if (prev - head > 1)
-						*scontextp++ = '.';
+					if (avail > 1) {
+						if (prev - head > 1)
+							*scontextp++ = '.';
+						else
+							*scontextp++ = ',';
+						avail--;
+					}
+
+					nm = sym_name(p, SYM_CATS, prev);
+					rc = strscpy(scontextp, nm, avail);
+					if (rc >= 0) {
+						scontextp += rc;
+						avail -= rc;
+					}
+				}
+				if (avail > 1) {
+					if (prev < 0)
+						*scontextp++ = ':';
 					else
 						*scontextp++ = ',';
-					nm = sym_name(p, SYM_CATS, prev);
-					strcpy(scontextp, nm);
-					scontextp += strlen(nm);
+					avail--;
 				}
-				if (prev < 0)
-					*scontextp++ = ':';
-				else
-					*scontextp++ = ',';
 				nm = sym_name(p, SYM_CATS, i);
-				strcpy(scontextp, nm);
-				scontextp += strlen(nm);
+				rc = strscpy(scontextp, nm, avail);
+				if (rc >= 0) {
+					scontextp += rc;
+					avail -= rc;
+				}
 				head = i;
 			}
 			prev = i;
 		}
 
 		if (prev != head) {
-			if (prev - head > 1)
-				*scontextp++ = '.';
-			else
-				*scontextp++ = ',';
+			if (avail > 1) {
+				if (prev - head > 1)
+					*scontextp++ = '.';
+				else
+					*scontextp++ = ',';
+				avail--;
+			}
 			nm = sym_name(p, SYM_CATS, prev);
-			strcpy(scontextp, nm);
-			scontextp += strlen(nm);
+			rc = strscpy(scontextp, nm, avail);
+			if (rc >= 0) {
+				scontextp += rc;
+				avail -= rc;
+			}
 		}
 
 		if (l == 0) {
 			if (mls_level_eq(&context->range.level[0],
 					 &context->range.level[1]))
 				break;
-			else
+			else if (avail > 1) {
 				*scontextp++ = '-';
+				avail--;
+			}
 		}
 	}
 
 	*scontext = scontextp;
-	return;
 }
 
 int mls_level_isvalid(struct policydb *p, struct mls_level *l)

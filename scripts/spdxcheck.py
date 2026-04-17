@@ -43,32 +43,33 @@ def read_spdxdata(repo):
                 continue
 
             exception = None
-            for l in open(el.path).readlines():
-                if l.startswith('Valid-License-Identifier:'):
-                    lid = l.split(':')[1].strip().upper()
-                    if lid in spdx.licenses:
-                        raise SPDXException(el, 'Duplicate License Identifier: %s' %lid)
-                    else:
-                        spdx.licenses.append(lid)
+            with open(el.path) as fd:
+                for l in fd:
+                    if l.startswith('Valid-License-Identifier:'):
+                        lid = l.split(':')[1].strip().upper()
+                        if lid in spdx.licenses:
+                            raise SPDXException(el, 'Duplicate License Identifier: %s' %lid)
+                        else:
+                            spdx.licenses.append(lid)
 
-                elif l.startswith('SPDX-Exception-Identifier:'):
-                    exception = l.split(':')[1].strip().upper()
-                    spdx.exceptions[exception] = []
+                    elif l.startswith('SPDX-Exception-Identifier:'):
+                        exception = l.split(':')[1].strip().upper()
+                        spdx.exceptions[exception] = []
 
-                elif l.startswith('SPDX-Licenses:'):
-                    for lic in l.split(':')[1].upper().strip().replace(' ', '').replace('\t', '').split(','):
-                        if not lic in spdx.licenses:
-                            raise SPDXException(None, 'Exception %s missing license %s' %(ex, lic))
-                        spdx.exceptions[exception].append(lic)
+                    elif l.startswith('SPDX-Licenses:'):
+                        for lic in l.split(':')[1].upper().strip().replace(' ', '').replace('\t', '').split(','):
+                            if not lic in spdx.licenses:
+                                raise SPDXException(None, 'Exception %s missing license %s' %(exception, lic))
+                            spdx.exceptions[exception].append(lic)
 
-                elif l.startswith("License-Text:"):
-                    if exception:
-                        if not len(spdx.exceptions[exception]):
-                            raise SPDXException(el, 'Exception %s is missing SPDX-Licenses' %excid)
-                        spdx.exception_files += 1
-                    else:
-                        spdx.license_files += 1
-                    break
+                    elif l.startswith("License-Text:"):
+                        if exception:
+                            if not len(spdx.exceptions[exception]):
+                                raise SPDXException(el, 'Exception %s is missing SPDX-Licenses' %exception)
+                            spdx.exception_files += 1
+                        else:
+                            spdx.license_files += 1
+                        break
     return spdx
 
 class id_parser(object):

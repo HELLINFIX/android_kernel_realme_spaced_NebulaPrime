@@ -111,6 +111,11 @@ static void audit_cb(struct audit_buffer *ab, void *va)
 		audit_log_format(ab, " options=");
 		audit_log_untrustedstring(ab, aad(sa)->mnt.data);
 	}
+	if (aad(sa)->peer) {
+		audit_log_format(ab, " target=");
+		aa_label_xaudit(ab, labels_ns(aad(sa)->label), aad(sa)->peer,
+				FLAGS_NONE, GFP_ATOMIC);
+	}
 }
 
 /**
@@ -134,7 +139,8 @@ static int audit_mount(struct aa_profile *profile, const char *op,
 		       const char *name, const char *src_name,
 		       const char *type, const char *trans,
 		       unsigned long flags, const void *data, u32 request,
-		       struct aa_perms *perms, const char *info, int error)
+		       struct aa_perms *perms, const char *info,
+		       struct aa_label *target, int error)
 {
 	int audit_type = AUDIT_APPARMOR_AUTO;
 	DEFINE_AUDIT_DATA(sa, LSM_AUDIT_DATA_NONE, op);
@@ -176,6 +182,7 @@ static int audit_mount(struct aa_profile *profile, const char *op,
 	if (data && (perms->audit & AA_AUDIT_DATA))
 		aad(&sa)->mnt.data = data;
 	aad(&sa)->info = info;
+	aad(&sa)->peer = target;
 	aad(&sa)->error = error;
 
 	return aa_audit(audit_type, profile, &sa, audit_cb);
@@ -356,7 +363,8 @@ static int match_mnt_path_str(struct aa_profile *profile,
 
 audit:
 	return audit_mount(profile, OP_MOUNT, mntpnt, devname, type, NULL,
-			   flags, data, AA_MAY_MOUNT, &perms, info, error);
+			   flags, data, AA_MAY_MOUNT, &perms, info, NULL,
+			   error);
 }
 
 /**
@@ -582,7 +590,7 @@ static int profile_umount(struct aa_profile *profile, struct path *path,
 
 audit:
 	return audit_mount(profile, OP_UMOUNT, name, NULL, NULL, NULL, 0, NULL,
-			   AA_MAY_UMOUNT, &perms, info, error);
+			   AA_MAY_UMOUNT, &perms, info, NULL, error);
 }
 
 int aa_umount(struct aa_label *label, struct vfsmount *mnt, int flags)
@@ -652,7 +660,7 @@ static struct aa_label *build_pivotroot(struct aa_profile *profile,
 audit:
 	error = audit_mount(profile, OP_PIVOTROOT, new_name, old_name,
 			    NULL, trans_name, 0, NULL, AA_MAY_PIVOTROOT,
-			    &perms, info, error);
+			    &perms, info, NULL, error);
 	if (error)
 		return ERR_PTR(error);
 
@@ -679,29 +687,27 @@ int aa_pivotroot(struct aa_label *label, const struct path *old_path,
 		info = "label build failed";
 		error = -ENOMEM;
 		goto fail;
-	} else if (!IS_ERR(target)) {
+	} else if (IS_ERR(target)) {
+		error = PTR_ERR(target);
+		goto out;
+	} else {
 		error = aa_replace_current_label(target);
 		if (error) {
-			/* TODO: audit target */
-			aa_put_label(target);
-			goto out;
+			info = "failed to replace current label";
+			goto fail;
 		}
 		aa_put_label(target);
-	} else
-		/* already audited error */
-		error = PTR_ERR(target);
+	}
 out:
 	put_buffers(old_buffer, new_buffer);
 
 	return error;
 
 fail:
-	/* TODO: add back in auditing of new_name and old_name */
 	error = fn_for_each(label, profile,
-			audit_mount(profile, OP_PIVOTROOT, NULL /*new_name */,
-				    NULL /* old_name */,
-				    NULL, NULL,
-				    0, NULL, AA_MAY_PIVOTROOT, &nullperms, info,
-				    error));
+			audit_mount(profile, OP_PIVOTROOT, NULL, NULL,
+				    NULL, NULL, 0, NULL, AA_MAY_PIVOTROOT,
+				    &nullperms, info, target, error));
+	aa_put_label(target);
 	goto out;
 }

@@ -3223,6 +3223,7 @@ static ssize_t set_dvfs_period(struct device *dev,
 	}
 
 	kbdev->pm.dvfs_period = dvfs_period;
+
 	dev_dbg(kbdev->dev, "DVFS period: %dms\n", dvfs_period);
 
 	return count;

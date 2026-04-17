@@ -4042,8 +4042,15 @@ static bool age_lruvec(struct lruvec *lruvec, struct scan_control *sc,
 	return true;
 }
 
-/* to protect the working set of the last N jiffies */
-static unsigned long lru_gen_min_ttl __read_mostly = 5 * HZ; // 5000ms
+/*
+ * Protect the recent working set while keeping reclaim responsive.
+ *
+ * A very high default can make reclaim hit the "min_ttl unsatisfied" path
+ * too often on phones/tablets and escalate to OOM unnecessarily under bursty
+ * pressure. Keep a modest default and let userspace raise it via
+ * /sys/kernel/mm/lru_gen/min_ttl_ms when desired.
+ */
+static unsigned long lru_gen_min_ttl __read_mostly = HZ; /* 1000ms */
 static int lru_gen_min_ttl_unsatisfied;
 
 static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)

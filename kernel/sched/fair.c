@@ -6109,6 +6109,11 @@ static int wake_wide(struct task_struct *p, int sibling_count_hint)
 	return 1;
 }
 
+static bool sched_task_needs_perf_cpu(struct task_struct *p);
+static unsigned long sched_allowed_max_capacity(struct task_struct *p);
+static int sched_select_perf_cpu(struct task_struct *p, int prev_cpu,
+				 int hint_cpu, bool prefer_prev);
+
 /*
  * The purpose of wake_affine() is to quickly determine on which CPU we can run
  * soonest. For the purpose of speed we only consider the waking and previous
@@ -6192,6 +6197,23 @@ static int wake_affine(struct sched_domain *sd, struct task_struct *p,
 		       int this_cpu, int prev_cpu, int sync)
 {
 	int target = nr_cpumask_bits;
+	int perf_cpu;
+
+	/*
+	 * Override WAKE_AFFINE when a heavy/latency task would otherwise stay
+	 * on LITTLE. This avoids a slow LITTLE->BIG migration on the critical
+	 * wakeup path.
+	 */
+	if (sched_task_needs_perf_cpu(p)) {
+		unsigned long max_cap = sched_allowed_max_capacity(p);
+		bool prev_little = capacity_orig_of(prev_cpu) < max_cap;
+		bool this_busy_little = !available_idle_cpu(this_cpu) &&
+					capacity_orig_of(this_cpu) < max_cap;
+
+		perf_cpu = sched_select_perf_cpu(p, prev_cpu, this_cpu, false);
+		if (perf_cpu >= 0 && (prev_little || this_busy_little))
+			return perf_cpu;
+	}
 
 	if (sched_feat(WA_IDLE))
 		target = wake_affine_idle(this_cpu, prev_cpu, sync);
@@ -6764,6 +6786,17 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 {
 	struct sched_domain *sd;
 	int i, recent_used_cpu;
+	int perf_cpu;
+
+	/*
+	 * For UI/top-app wakeups, try highest-capacity CPUs first to reduce
+	 * wakeup-to-run latency and frame deadline misses.
+	 */
+	if (sched_task_needs_perf_cpu(p)) {
+		perf_cpu = sched_select_perf_cpu(p, prev, target, false);
+		if (perf_cpu >= 0)
+			return perf_cpu;
+	}
 
 	if (available_idle_cpu(target))
 		return target;
@@ -7515,6 +7548,112 @@ static int wake_cap(struct task_struct *p, int cpu, int prev_cpu)
 	return !task_fits_capacity(p, min_cap);
 }
 
+static bool sched_latency_sensitive_task(struct task_struct *p)
+{
+	if (uclamp_latency_sensitive(p))
+		return true;
+
+#if defined(CONFIG_SCHED_WALT) && defined(OPLUS_FEATURE_SCHED_ASSIST)
+	if (is_heavy_ux_task(p))
+		return true;
+#endif
+
+	return false;
+}
+
+static unsigned long sched_allowed_min_capacity(struct task_struct *p)
+{
+	unsigned long min_cap = ULONG_MAX;
+	int cpu;
+
+	for_each_cpu(cpu, &p->cpus_allowed)
+		min_cap = min(min_cap, capacity_orig_of(cpu));
+
+	if (min_cap == ULONG_MAX)
+		return 0;
+
+	return min_cap;
+}
+
+static unsigned long sched_allowed_max_capacity(struct task_struct *p)
+{
+	unsigned long max_cap = 0;
+	int cpu;
+
+	for_each_cpu(cpu, &p->cpus_allowed)
+		max_cap = max(max_cap, capacity_orig_of(cpu));
+
+	return max_cap;
+}
+
+static bool sched_task_needs_perf_cpu(struct task_struct *p)
+{
+	unsigned long min_cap, util;
+
+	min_cap = sched_allowed_min_capacity(p);
+	if (!min_cap)
+		return false;
+
+	util = task_util_est(p);
+	if (!util)
+		util = task_util(p);
+
+	if (util > min_cap)
+		return true;
+
+	return sched_latency_sensitive_task(p);
+}
+
+/*
+ * Pick a CPU from the highest-capacity cluster for latency-sensitive wakeups.
+ * Prefer an idle CPU first, then the least loaded one.
+ */
+static int sched_select_perf_cpu(struct task_struct *p, int prev_cpu,
+				 int hint_cpu, bool prefer_prev)
+{
+	unsigned long max_cap = sched_allowed_max_capacity(p);
+	unsigned long best_util = ULONG_MAX;
+	int cpu, best_cpu = -1;
+
+	if (!max_cap)
+		return -1;
+
+	if (prefer_prev &&
+	    cpumask_test_cpu(prev_cpu, &p->cpus_allowed) &&
+	    cpu_online(prev_cpu) &&
+	    !cpu_isolated(prev_cpu) &&
+	    capacity_orig_of(prev_cpu) == max_cap)
+		return prev_cpu;
+
+	if (cpumask_test_cpu(hint_cpu, &p->cpus_allowed) &&
+	    cpu_online(hint_cpu) &&
+	    !cpu_isolated(hint_cpu) &&
+	    capacity_orig_of(hint_cpu) == max_cap &&
+	    available_idle_cpu(hint_cpu))
+		return hint_cpu;
+
+	for_each_cpu(cpu, &p->cpus_allowed) {
+		unsigned long util;
+
+		if (!cpu_online(cpu) || cpu_isolated(cpu))
+			continue;
+
+		if (capacity_orig_of(cpu) != max_cap)
+			continue;
+
+		if (available_idle_cpu(cpu))
+			return cpu;
+
+		util = cpu_util(cpu);
+		if (util < best_util) {
+			best_util = util;
+			best_cpu = cpu;
+		}
+	}
+
+	return best_cpu;
+}
+
 /*
  * Predicts what cpu_util(@cpu) would return if @p was migrated (and enqueued)
  * to @dst_cpu.
@@ -8046,9 +8185,31 @@ SELECT_TASK_RQ_FAIR(struct task_struct *p, int prev_cpu, int sd_flag,
 #endif
 
 	if (sd_flag & SD_BALANCE_WAKE) {
+		/*
+		 * Fast TTWU path:
+		 * 1) prev_cpu if it is already a BIG cpu
+		 * 2) an idle BIG cpu
+		 * 3) least loaded BIG cpu
+		 *
+		 * This bypasses slow domain iteration for latency-sensitive
+		 * wakeups and avoids delayed LITTLE->BIG migrations.
+		 */
+		if (sched_task_needs_perf_cpu(p)) {
+			new_cpu = sched_select_perf_cpu(p, prev_cpu, cpu, true);
+			if (new_cpu >= 0)
+				return LB_WAKE_AFFINE | new_cpu;
+		}
+
 		record_wakee(p);
 
 		if (static_branch_unlikely(&sched_energy_present)) {
+			/*
+			 * Relax EAS-first placement for short latency-critical
+			 * bursts; favor immediate responsiveness over energy.
+			 */
+			if (sched_task_needs_perf_cpu(p))
+				goto sd_loop;
+
 			if (uclamp_latency_sensitive(p) && !sched_feat(EAS_PREFER_IDLE) && !sync)
 				goto sd_loop;
 

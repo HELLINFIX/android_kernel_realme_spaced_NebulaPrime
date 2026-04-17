@@ -1733,7 +1733,11 @@ static enum compact_result compact_zone_order(struct zone *zone, int order,
 	return ret;
 }
 
-int sysctl_extfrag_threshold = 500;
+/*
+ * Bias toward compaction slightly earlier so high-order allocation failures
+ * are less likely to be dominated by external fragmentation.
+ */
+int sysctl_extfrag_threshold = 650;
 
 /**
  * try_to_compact_pages - Direct compact to satisfy a high-order allocation

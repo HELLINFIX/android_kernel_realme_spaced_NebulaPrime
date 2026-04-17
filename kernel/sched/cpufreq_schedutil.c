@@ -1399,6 +1399,7 @@ static int sugov_init(struct cpufreq_policy *policy)
 {
 	struct sugov_policy *sg_policy;
 	struct sugov_tunables *tunables;
+	unsigned int transition_delay_us;
 	int ret = 0;
 
 	/* State should be equivalent to EXIT */
@@ -1443,8 +1444,14 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->up_rate_limit_us = cpufreq_policy_transition_delay_us(policy);
-	tunables->down_rate_limit_us = cpufreq_policy_transition_delay_us(policy);
+	transition_delay_us = cpufreq_policy_transition_delay_us(policy);
+	/*
+	 * Keep the initial up-rate limit tighter than the hardware transition
+	 * delay to avoid sluggish frequency ramp-up on UI bursts when external
+	 * boost paths are unavailable or disabled.
+	 */
+	tunables->up_rate_limit_us = min_t(unsigned int, transition_delay_us, 2000U);
+	tunables->down_rate_limit_us = transition_delay_us;
 
 #if defined(OPLUS_FEATURE_SCHEDUTIL_USE_TL) && defined(CONFIG_SCHEDUTIL_USE_TL)
 	tunables->target_loads = default_target_loads;

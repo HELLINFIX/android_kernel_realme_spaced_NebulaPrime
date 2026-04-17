@@ -430,12 +430,6 @@ static void snd_intel8x0m_setup_periods(struct intel8x0m *chip, struct ichdev *i
 	iputbyte(chip, port + ICH_REG_OFF_CIV, 0);
 	ichdev->lvi_frag = ICH_REG_LVI_MASK % ichdev->frags;
 	ichdev->position = 0;
-#if 0
-	dev_dbg(chip->card->dev,
-		"lvi_frag = %i, frags = %i, period_size = 0x%x, period_size1 = 0x%x\n",
-	       ichdev->lvi_frag, ichdev->frags, ichdev->fragsize,
-	       ichdev->fragsize1);
-#endif
 	/* clear interrupts */
 	iputbyte(chip, port + ichdev->roff_sr, ICH_FIFOE | ICH_BCIS | ICH_LVBCI);
 }
@@ -452,7 +446,6 @@ static inline void snd_intel8x0m_update(struct intel8x0m *chip, struct ichdev *i
 
 	civ = igetbyte(chip, port + ICH_REG_OFF_CIV);
 	if (civ == ichdev->civ) {
-		// snd_printd("civ same %d\n", civ);
 		step = 1;
 		ichdev->civ++;
 		ichdev->civ &= ICH_REG_LVI_MASK;
@@ -460,8 +453,6 @@ static inline void snd_intel8x0m_update(struct intel8x0m *chip, struct ichdev *i
 		step = civ - ichdev->civ;
 		if (step < 0)
 			step += ICH_REG_LVI_MASK + 1;
-		// if (step != 1)
-		//	snd_printd("step = %d, %d -> %d\n", step, ichdev->civ, civ);
 		ichdev->civ = civ;
 	}
 
@@ -476,13 +467,6 @@ static inline void snd_intel8x0m_update(struct intel8x0m *chip, struct ichdev *i
 		ichdev->bdbar[ichdev->lvi * 2] = cpu_to_le32(ichdev->physbuf +
 							     ichdev->lvi_frag *
 							     ichdev->fragsize1);
-#if 0
-		dev_dbg(chip->card->dev,
-			"new: bdbar[%i] = 0x%x [0x%x], prefetch = %i, all = 0x%x, 0x%x\n",
-		       ichdev->lvi * 2, ichdev->bdbar[ichdev->lvi * 2],
-		       ichdev->bdbar[ichdev->lvi * 2 + 1], inb(ICH_REG_OFF_PIV + port),
-		       inl(port + 4), inb(port + ICH_REG_OFF_CR));
-#endif
 		if (--ichdev->ack == 0) {
 			ichdev->ack = ichdev->ack_reload;
 			ack = 1;

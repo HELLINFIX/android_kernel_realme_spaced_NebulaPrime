@@ -1151,6 +1151,7 @@ ssize_t set_sugov_tl(unsigned int cpu, char *buf)
 	struct sugov_tunables *tunables;
 	struct gov_attr_set *attr_set;
 	size_t count;
+	ssize_t ret;
 
 	if (!buf)
 		return -EFAULT;
@@ -1160,17 +1161,23 @@ ssize_t set_sugov_tl(unsigned int cpu, char *buf)
 		return -ENODEV;
 
 	sg_policy = policy->governor_data;
-	if (!sg_policy)
+	if (!sg_policy) {
+		cpufreq_cpu_put(policy);
 		return -EINVAL;
+	}
 
 	tunables = sg_policy->tunables;
-	if (!tunables)
+	if (!tunables) {
+		cpufreq_cpu_put(policy);
 		return -ENOMEM;
+	}
 
 	attr_set = &tunables->attr_set;
 	count = strlen(buf);
 
-	return target_loads_store(attr_set, buf, count);
+	ret = target_loads_store(attr_set, buf, count);
+	cpufreq_cpu_put(policy);
+	return ret;
 }
 EXPORT_SYMBOL_GPL(set_sugov_tl);
 #endif
@@ -1217,8 +1224,10 @@ int schedutil_set_down_rate_limit_us(int cpu, unsigned int rate_limit_us)
 	if (!policy)
 		return -EINVAL;
 
-	if (policy->governor != &schedutil_gov)
+	if (policy->governor != &schedutil_gov) {
+		cpufreq_cpu_put(policy);
 		return -ENOENT;
+	}
 
 	mutex_lock(&global_tunables_lock);
 	sg_policy = policy->governor_data;
@@ -1240,8 +1249,7 @@ int schedutil_set_down_rate_limit_us(int cpu, unsigned int rate_limit_us)
 	mutex_unlock(&attr_set->update_lock);
 	mutex_unlock(&global_tunables_lock);
 
-	if (policy)
-		cpufreq_cpu_put(policy);
+	cpufreq_cpu_put(policy);
 	return 0;
 }
 EXPORT_SYMBOL(schedutil_set_down_rate_limit_us);
@@ -1257,8 +1265,10 @@ int schedutil_set_up_rate_limit_us(int cpu, unsigned int rate_limit_us)
 	if (!policy)
 		return -EINVAL;
 
-	if (policy->governor != &schedutil_gov)
+	if (policy->governor != &schedutil_gov) {
+		cpufreq_cpu_put(policy);
 		return -ENOENT;
+	}
 
 	mutex_lock(&global_tunables_lock);
 	sg_policy = policy->governor_data;
@@ -1280,8 +1290,7 @@ int schedutil_set_up_rate_limit_us(int cpu, unsigned int rate_limit_us)
 	mutex_unlock(&attr_set->update_lock);
 	mutex_unlock(&global_tunables_lock);
 
-	if (policy)
-		cpufreq_cpu_put(policy);
+	cpufreq_cpu_put(policy);
 	return 0;
 }
 EXPORT_SYMBOL(schedutil_set_up_rate_limit_us);

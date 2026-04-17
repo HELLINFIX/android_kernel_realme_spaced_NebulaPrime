@@ -222,7 +222,7 @@ extern int sysctl_slide_boost_enabled;
 extern int sysctl_boost_task_threshold;
 extern int sysctl_input_boost_enabled;
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
+#ifdef CONFIG_SCHED_WALT
 enum task_event {
 	PUT_PREV_TASK   = 0,
 	PICK_NEXT_TASK  = 1,
@@ -231,7 +231,7 @@ enum task_event {
 	TASK_UPDATE     = 4,
 	IRQ_UPDATE	= 5,
 };
-#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT) */
+#endif /* CONFIG_SCHED_WALT */
 /* Task command name length: */
 #define TASK_COMM_LEN			16
 
@@ -693,7 +693,7 @@ struct task_record {
 };
 #endif
 
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
+#ifdef CONFIG_SCHED_WALT
 #define RAVG_HIST_SIZE_MAX 5
 
 /* ravg represents frequency scaled cpu-demand of tasks */
@@ -726,7 +726,7 @@ struct ravg {
 	u32 curr_window, prev_window;
 	u16 active_windows;
 };
-#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT) */
+#endif /* CONFIG_SCHED_WALT */
 
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
@@ -790,9 +790,9 @@ struct task_struct {
 	struct sched_entity		se;
 	struct sched_rt_entity		rt;
 
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
+#ifdef CONFIG_SCHED_WALT
 	u64 last_wake_ts;
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+#endif /* CONFIG_SCHED_WALT */
 
 	/* task boost vendor fields */
 	u64				last_sleep_ts;
@@ -1394,14 +1394,14 @@ struct task_struct {
        int get_mmlock;
 #endif
 
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
+#ifdef CONFIG_SCHED_WALT
 	struct ravg ravg;
 	/*
 	 * 'init_load_pct' represents the initial task load assigned to children
 	 * of this task
 	 */
 	u32 init_load_pct;
-#endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT) */
+#endif /* CONFIG_SCHED_WALT */
 
 #ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
 	struct task_info oplus_task_info;

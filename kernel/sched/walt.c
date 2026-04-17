@@ -650,9 +650,9 @@ void walt_mark_task_starting(struct task_struct *p)
 	}
 
 	wallclock = walt_ktime_clock();
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
+#ifdef CONFIG_SCHED_WALT
 	p->last_wake_ts = wallclock;
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+#endif /* CONFIG_SCHED_WALT */
 	p->ravg.mark_start = wallclock;
 }
 

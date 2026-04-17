@@ -32,13 +32,15 @@
 bool ux_task_misfit(struct task_struct *p, int cpu);
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
-#include <linux/sched.h>
-extern u64 ux_task_load[];
-extern u64 ux_load_ts[];
+#ifdef CONFIG_SCHED_WALT
 extern unsigned int walt_ravg_window;
 #define walt_scale_demand_divisor (walt_ravg_window >> SCHED_CAPACITY_SHIFT)
 #define scale_demand(d) ((d)/walt_scale_demand_divisor)
+#endif
+
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
+extern u64 ux_task_load[];
+extern u64 ux_load_ts[];
 #define UX_LOAD_WINDOW 8000000
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
@@ -3845,9 +3847,16 @@ static inline unsigned long task_util(struct task_struct *p)
 {
 	sf_task_util_record(p);
 #ifdef CONFIG_SCHED_WALT
-	if (likely(!walt_disabled && (sysctl_sched_use_walt_task_util || (test_task_ux(p) && sysctl_sched_assist_enabled && (sched_assist_scene(SA_SLIDE)|| sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_ANIM))))))
+	if (likely(!walt_disabled && sysctl_sched_use_walt_task_util))
 		return (p->ravg.demand /
 			(walt_ravg_window >> SCHED_CAPACITY_SHIFT));
+#ifdef OPLUS_FEATURE_SCHED_ASSIST
+	if (likely(!walt_disabled && test_task_ux(p) && sysctl_sched_assist_enabled &&
+		   (sched_assist_scene(SA_SLIDE) || sched_assist_scene(SA_INPUT) ||
+		    sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_ANIM))))
+		return (p->ravg.demand /
+			(walt_ravg_window >> SCHED_CAPACITY_SHIFT));
+#endif
 #endif
 	return READ_ONCE(p->se.avg.util_avg);
 }
@@ -3862,9 +3871,16 @@ static inline unsigned long _task_util_est(struct task_struct *p)
 unsigned long task_util_est(struct task_struct *p)
 {
 #ifdef CONFIG_SCHED_WALT
-	if (likely(!walt_disabled && (sysctl_sched_use_walt_task_util || (test_task_ux(p) && sysctl_sched_assist_enabled && (sched_assist_scene(SA_SLIDE)|| sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_ANIM))))))
+	if (likely(!walt_disabled && sysctl_sched_use_walt_task_util))
 		return (p->ravg.demand /
 			(walt_ravg_window >> SCHED_CAPACITY_SHIFT));
+#ifdef OPLUS_FEATURE_SCHED_ASSIST
+	if (likely(!walt_disabled && test_task_ux(p) && sysctl_sched_assist_enabled &&
+		   (sched_assist_scene(SA_SLIDE) || sched_assist_scene(SA_INPUT) ||
+		    sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_ANIM))))
+		return (p->ravg.demand /
+			(walt_ravg_window >> SCHED_CAPACITY_SHIFT));
+#endif
 #endif
 	return max(task_util(p), _task_util_est(p));
 }

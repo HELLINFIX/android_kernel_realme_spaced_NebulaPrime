@@ -6789,7 +6789,7 @@ void init_idle(struct task_struct *idle, int cpu)
 	ftrace_graph_init_idle_task(idle, cpu);
 	vtime_init_idle(idle, cpu);
 #ifdef CONFIG_SMP
-	sprintf(idle->comm, "%s/%d", INIT_TASK_COMM, cpu);
+	snprintf(idle->comm, TASK_COMM_LEN, "%s/%d", INIT_TASK_COMM, cpu);
 #endif
 }
 

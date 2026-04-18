@@ -959,14 +959,14 @@ static ssize_t up_rate_limit_us_show(struct gov_attr_set *attr_set, char *buf)
 {
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 
-	return sprintf(buf, "%u\n", tunables->up_rate_limit_us);
+	return scnprintf(buf, PAGE_SIZE, "%u\n", tunables->up_rate_limit_us);
 }
 
 static ssize_t down_rate_limit_us_show(struct gov_attr_set *attr_set, char *buf)
 {
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 
-	return sprintf(buf, "%u\n", tunables->down_rate_limit_us);
+	return scnprintf(buf, PAGE_SIZE, "%u\n", tunables->down_rate_limit_us);
 }
 
 static ssize_t up_rate_limit_us_store(struct gov_attr_set *attr_set,
@@ -1022,10 +1022,12 @@ static ssize_t target_loads_show(struct gov_attr_set *attr_set, char *buf)
 
 	spin_lock_irqsave(&tunables->target_loads_lock, flags);
 	for (i = 0; i < tunables->ntarget_loads; i++)
-		ret += snprintf(buf + ret, PAGE_SIZE - ret - 1, "%u%s", tunables->target_loads[i],
+		ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%u%s", tunables->target_loads[i],
 			i & 0x1 ? ":" : " ");
 
-	snprintf(buf + ret - 1, PAGE_SIZE - ret - 1, "\n");
+	if (ret > 0 && buf[ret - 1] == ' ')
+		ret--;
+	ret += scnprintf(buf + ret, PAGE_SIZE - ret, "\n");
 	spin_unlock_irqrestore(&tunables->target_loads_lock, flags);
 	return ret;
 }

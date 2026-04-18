@@ -26,7 +26,7 @@ int show_cpu_info(char *buf, int buf_size)
 	int len = 0;
 
 	for_each_possible_cpu(cpu) {
-		len += snprintf(buf+len, buf_size-len,
+		len += scnprintf(buf+len, buf_size-len,
 			"cpu=%d max=%4uMHz curr=%4uMHz ",
 			cpu,
 
@@ -37,7 +37,7 @@ int show_cpu_info(char *buf, int buf_size)
 			cpu_online(cpu)?cpufreq_quick_get(cpu):0
 			);
 
-		len += snprintf(buf+len, buf_size-len,
+		len += scnprintf(buf+len, buf_size-len,
 			"orig_cap=%4lu limit_cap=%4lu cur_cap=%4lu ",
 			/* Original capacity */
 			cpu_online(cpu)?capacity_orig_of(cpu):0,
@@ -50,7 +50,7 @@ int show_cpu_info(char *buf, int buf_size)
 					arch_scale_freq_capacity(cpu)):0
 			);
 
-		len += snprintf(buf+len, buf_size-len,
+		len += scnprintf(buf+len, buf_size-len,
 			"cfs=%4lu rt=%4lu (%s)\n",
 			/* cpu cfs utilization */
 			cpu_online(cpu)?cpu_util_cfs(cpu_rq(cpu)):0,
@@ -72,30 +72,30 @@ int show_perf_order_domain_info(char *buf, int buf_size)
 	struct perf_order_domain *domain;
 	int len = 0;
 
-	len += snprintf(buf+len, buf_size-len,
+	len += scnprintf(buf+len, buf_size-len,
 		"Sort perf_domains from little to big:\n"
 		);
 
 	if (!pod_is_ready()) {
-		len += snprintf(buf+len, buf_size-len,
+		len += scnprintf(buf+len, buf_size-len,
 		"Perf order domain is not ready!\n"
 		);
 		return len;
 	}
 
 	for_each_perf_domain_ascending(domain) {
-		len += snprintf(buf+len, buf_size-len,
+		len += scnprintf(buf+len, buf_size-len,
 			"   cpumask: 0x%02lx\n",
 			*cpumask_bits(&domain->possible_cpus)
 			);
 	}
 
 #if defined(OPLUS_FEATURE_SCHEDUTIL_USE_TL) && defined(CONFIG_SCHEDUTIL_USE_TL)
-	len += snprintf(buf+len,buf_size-len,
+	len += scnprintf(buf+len,buf_size-len,
 		"capacity_margin : %d\n",
 		get_capacity_margin());
 
-	len += snprintf(buf+len,buf_size-len,
+	len += scnprintf(buf+len,buf_size-len,
 		"get_capacity_margin_dvfs : %d\n",
 		get_capacity_margin_dvfs());
 #endif

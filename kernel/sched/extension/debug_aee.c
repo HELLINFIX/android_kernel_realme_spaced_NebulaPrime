@@ -68,7 +68,7 @@ char print_at_AEE_buffer[160];
 
 #define SEQ_printf_at_AEE(m, x...)		\
 do {						\
-	snprintf(print_at_AEE_buffer, sizeof(print_at_AEE_buffer), x);	\
+	scnprintf(print_at_AEE_buffer, sizeof(print_at_AEE_buffer), x);	\
 	aee_sram_fiq_log(print_at_AEE_buffer);	\
 } while (0)
 

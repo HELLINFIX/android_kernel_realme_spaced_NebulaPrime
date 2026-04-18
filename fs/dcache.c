@@ -74,7 +74,7 @@
  * Retain dentry/inode caches longer to reduce metadata churn and index-cache
  * misses during sustained memory pressure.
  */
-int sysctl_vfs_cache_pressure __read_mostly = 50;
+int sysctl_vfs_cache_pressure __read_mostly = 100;
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
 
 __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);

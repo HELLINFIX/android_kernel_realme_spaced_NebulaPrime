@@ -13,7 +13,6 @@
 #include <linux/rcupdate.h>
 #include <linux/completion.h>
 #include <linux/wait.h>
-#include <linux/zstd.h>
 #include <crypto/hash.h>
 #include <linux/rwsem.h>
 
@@ -189,12 +188,6 @@ struct mount_info {
 	spinlock_t mi_per_uid_read_timeouts_lock;
 	struct incfs_per_uid_read_timeouts *mi_per_uid_read_timeouts;
 	int mi_per_uid_read_timeouts_size;
-
-	/* zstd workspace */
-	struct mutex mi_zstd_workspace_mutex;
-	void *mi_zstd_workspace;
-	ZSTD_DStream *mi_zstd_stream;
-	struct delayed_work mi_zstd_cleanup_work;
 
 	/* sysfs node */
 	struct incfs_sysfs_node *mi_sysfs_node;

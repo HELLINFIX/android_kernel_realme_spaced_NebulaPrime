@@ -333,7 +333,7 @@ int user_min_free_kbytes = -1;
  * Keep a wider free-page watermark gap to reduce direct reclaim stalls and
  * allocator latency spikes under mixed file/anon pressure.
  */
-int watermark_scale_factor = 32;
+int watermark_scale_factor = 20;
 
 /*
  * Extra memory for the system to try freeing. Used to temporarily

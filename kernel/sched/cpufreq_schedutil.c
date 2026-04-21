@@ -556,6 +556,13 @@ unsigned long schedutil_cpu_util(int cpu, unsigned long util_cfs,
 		util = uclamp_rq_util_with(rq, util, p);
 #endif
 
+#if defined(CONFIG_SCHED_WALT) && defined(OPLUS_FEATURE_SCHED_ASSIST)
+	if (sysctl_sched_use_walt_cpu_util) {
+		unsigned long walt_util = rq->cfs.avg.util_avg;
+		util = max(util, walt_util);
+	}
+#endif
+
 	dl_util = cpu_util_dl(rq);
 
 	/*

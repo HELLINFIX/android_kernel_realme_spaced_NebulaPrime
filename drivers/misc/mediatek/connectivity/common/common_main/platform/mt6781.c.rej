@@ -1,0 +1,22 @@
+--- drivers/misc/mediatek/connectivity/common/common_main/platform/mt6781.c
++++ drivers/misc/mediatek/connectivity/common/common_main/platform/mt6781.c
+@@ -1435,11 +1435,14 @@
+	if (conn_reg.mcu_cfg_on_base != 0 &&
+	    conn_reg.mcu_top_misc_on_base != 0) {
+		/*check connsys clock and sleep status*/
+-		CONSYS_REG_WRITE(conn_reg.mcu_conn_hif_on_base, CONSYS_CLOCK_CHECK_VALUE);
+-		udelay(200);
+-		value = CONSYS_REG_READ(conn_reg.mcu_conn_hif_on_base);
+-		if ((value & CONSYS_HCLK_CHECK_BIT) &&
+-		    (value & CONSYS_OSCCLK_CHECK_BIT))
+-			can_read = 1;
++		int retry = 5;
++		while (retry-- > 0 && !can_read) {
++			CONSYS_REG_WRITE(conn_reg.mcu_conn_hif_on_base, CONSYS_CLOCK_CHECK_VALUE);
++			udelay(200);
++			value = CONSYS_REG_READ(conn_reg.mcu_conn_hif_on_base);
++			if ((value & CONSYS_HCLK_CHECK_BIT) &&
++			    (value & CONSYS_OSCCLK_CHECK_BIT))
++				can_read = 1;
++		}
+	}

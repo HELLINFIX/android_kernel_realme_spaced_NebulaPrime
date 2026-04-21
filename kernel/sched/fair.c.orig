@@ -4150,14 +4150,6 @@ place_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int initial)
 		vruntime -= thresh;
 	}
 
-	/*
-	 * Fix vruntime inconsistencies during wakeup preemption.
-	 * Ensure task doesn't get an excessive sleep bonus.
-	 */
-	if (sched_feat(FAIR_SLEEPERS) && !initial) {
-		vruntime = max_vruntime(vruntime, cfs_rq->min_vruntime - sysctl_sched_latency);
-	}
-
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	place_entity_adjust_ux_task(cfs_rq, se, initial);
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */

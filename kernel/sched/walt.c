@@ -81,7 +81,7 @@ u64 walt_ktime_clock(void)
 {
 	if (unlikely(walt_ktime_suspended))
 		return ktime_to_ns(ktime_last);
-	return ktime_get_ns();
+	return ktime_get_mono_fast_ns();
 }
 
 static void walt_resume(void)
@@ -91,7 +91,7 @@ static void walt_resume(void)
 
 static int walt_suspend(void)
 {
-	ktime_last = ktime_get();
+	ktime_last = ns_to_ktime(ktime_get_mono_fast_ns());
 	walt_ktime_suspended = true;
 	return 0;
 }

@@ -1434,8 +1434,8 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-     tunables->up_rate_limit_us = 500;
-     tunables->down_rate_limit_us = 15000;
+  tunables->up_rate_limit_us = 1000;    /* slower boost → less freq spikes */
+  tunables->down_rate_limit_us = 20000; /* smooth drop */
 
 #if defined(OPLUS_FEATURE_SCHEDUTIL_USE_TL) && defined(CONFIG_SCHEDUTIL_USE_TL)
 	tunables->target_loads = default_target_loads;

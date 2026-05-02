@@ -1015,13 +1015,7 @@ int elevator_init_mq(struct request_queue *q)
 	if (unlikely(q->elevator))
 		goto out;
 
-	e = elevator_get(q,
-#ifdef CONFIG_MQ_IOSCHED_SSG
-	"ssg",
-#else
-	"mq-deadline",
-#endif
-	false);
+	e = elevator_get(q, "mq-deadline", false);
 	if (!e)
 		goto out;
 

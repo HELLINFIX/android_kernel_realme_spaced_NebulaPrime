@@ -1015,7 +1015,13 @@ int elevator_init_mq(struct request_queue *q)
 	if (unlikely(q->elevator))
 		goto out;
 
-	e = elevator_get(q, "mq-deadline", false);
+	e = elevator_get(q,
+#ifdef CONFIG_IOSCHED_BFQ
+	"bfq",
+#else
+	"mq-deadline",
+#endif
+	false);
 	if (!e)
 		goto out;
 

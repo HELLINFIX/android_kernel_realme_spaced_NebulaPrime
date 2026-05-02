@@ -463,7 +463,29 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 #ifdef CONFIG_MTK_TINYSYS_SSPM_SUPPORT
 	return freq;
 #else
-	return cpufreq_driver_resolve_freq(policy, freq);
+    unsigned int resolved;
+    unsigned int prev = sg_policy->next_freq;
+
+    resolved = cpufreq_driver_resolve_freq(policy, freq);
+
+    /*
+     * Smooth frequency transitions:
+     * Avoid large jumps (low -> max) that skip intermediate OPPs.
+     */
+    if (prev) {
+        unsigned int diff = (resolved > prev) ?
+                            (resolved - prev) : (prev - resolved);
+
+        /* Limit jump to 50% of previous frequency */
+        if (diff > (prev / 2)) {
+            resolved = prev + (diff / 2);
+
+            /* Re-map to closest valid frequency */
+            resolved = cpufreq_driver_resolve_freq(policy, resolved);
+        }
+    }
+
+    return resolved;
 #endif
 }
 #endif
@@ -1412,8 +1434,8 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->up_rate_limit_us = cpufreq_policy_transition_delay_us(policy);
-	tunables->down_rate_limit_us = cpufreq_policy_transition_delay_us(policy);
+     tunables->up_rate_limit_us = 500;
+     tunables->down_rate_limit_us = 15000;
 
 #if defined(OPLUS_FEATURE_SCHEDUTIL_USE_TL) && defined(CONFIG_SCHEDUTIL_USE_TL)
 	tunables->target_loads = default_target_loads;
